@@ -1,51 +1,84 @@
-# NS Kinetic Typography Engine — AE Subtitle Pipeline
+# NS Kinetic Typography Engine 🎬⚡
+> **Automated ElevenLabs TTS to After Effects Subtitle Pipeline**  
+> *Generate broadcast-quality animated captions from voiceovers in seconds.*
 
-Turns an ElevenLabs VO into ready-to-style subtitle **text layers** in After Effects for high-speed video production.
-Script handles the timing, pagination, and placement — you focus on the creative motion design.
+[![After Effects](https://img.shields.io/badge/After_Effects-2024+-CC77FF?logo=adobeaftereffects&logoColor=white)](https://www.adobe.com/products/aftereffects.html)
+[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-API_v1-000000?logo=elevenlabs&logoColor=white)](https://elevenlabs.io)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## 📌 Overview / Описание
+
+**NS Kinetic Typography Engine** is a high-speed production pipeline for content creators, motion designers, and video editors (TikTok, Instagram Reels, YouTube Shorts). 
+
+It automatically converts **ElevenLabs Voiceovers (TTS)** into perfectly formatted, frame-accurate **After Effects subtitle text layers** using exact character-level timestamps and broadcast typography layout rules.
+
+---
+
+## 🔥 Key Features / Capabilities
+
+- ⏱ **Character-Level Timing**: Uses ElevenLabs timestamp alignment API for sub-frame subtitle precision.
+- 🎨 **Master Layer Style Inheritance**: Inherits all fonts, colors, Sapphire effects, glow, and animators from `_STYLE_BASE` and `_STYLE_ACCENT` comp layers.
+- ✍️ **Emphasis & Accent Words**: Mark `*words with asterisks*` in your script to pull them onto distinct accent styling lines.
+- 📜 **Linguistic Line-Breaking**: Smart pagination prevents dangling prepositions (`a`, `the`, `in`, `to`) and locks numbers to units (`12%`, `$500`).
+- ⚡ **CPS & Speed Guard**: Warns if reading speed exceeds 17 chars/sec to ensure maximum viewer retention.
+- 🔁 **100% Idempotent**: One-click re-runs safely overwrite previous subtitle layers without duplicating comp clutter.
+
+---
+
+## 🛠 Workflow Pipeline / Схема работы
 
 ```
-script.txt ──▶ vo_generate.js ──▶ vo.mp3 + vo.align.json
-                                        │
-                                        ▼
-                              caption_compile.js ──▶ vo.captions.json
-                                        │
-                                        ▼
-                          build_subs.jsx (in AE) ──▶ CAP001_L1, CAP001_ACC …
+ script.txt (with *emphasis*)
+           │
+           ▼
+    vo_generate.js ──────► ElevenLabs API (with-timestamps)
+           │
+           ├─► vo.mp3 / vo.wav (Voiceover Audio)
+           └─► vo.align.json (Character Timestamps)
+           │
+           ▼
+   caption_compile.js ───► Linguistic Formatting & CPS Guard
+           │
+           └─► vo.captions.json
+           │
+           ▼
+  build_subs.jsx (in AE) ─► CAP001_L1, CAP001_ACC (Text Layers)
 ```
 
-## Requirements
-- Node 18+ (for `vo_generate.js`; built-in fetch). Node 14+ for the compiler.
-- After Effects (any recent version) for the `.jsx`.
-- `ELEVENLABS_API_KEY` in your environment.
+---
 
-## 1) Generate VO + timings
-Write your script as plain text. Write numbers **the way they should appear on screen**
-(`$0.41`, `12.3%`) — the model speaks them correctly and timings map back to what you typed.
-Mark an emphasis word/phrase with `*asterisks*` → it becomes an accent line.
+## 🚀 Quick Start Guide / Быстрый запуск
 
+### 1) Prerequisites
+- **Node.js 18+**
+- **Adobe After Effects** (AE 2020+)
+- **ElevenLabs API Key** (`ELEVENLABS_API_KEY`)
+
+### 2) Generate VO & Character Alignment
+Write your script in plain text. Use `*asterisks*` to highlight key words for accent lines:
 ```bash
-ELEVENLABS_API_KEY=xi-... \
-node vo_generate.js --text script.txt --voice <VOICE_ID> --out vo_delisting_01 --format wav
+$env:ELEVENLABS_API_KEY="your_elevenlabs_api_key"
+node vo_generate.js --text script.txt --voice <VOICE_ID> --out vo_01
 ```
-→ `vo_delisting_01.wav` + `vo_delisting_01.align.json`
+*Outputs: `vo_01.mp3` and `vo_01.align.json`*
 
-## 2) Compile captions
+### 3) Compile Subtitles & Punctuation
 ```bash
-node caption_compile.js vo_delisting_01.align.json --config compile.config.json
+node caption_compile.js vo_01.align.json --config compile.config.json
 ```
-→ `vo_delisting_01.captions.json` (prints a page-by-page preview; flags warnings, never "fixes" silently)
+*Outputs: `vo_01.captions.json`*
 
-Tune everything in `compile.config.json` (chars/line, durations, casing, emphasis policy…).
+### 4) Build Layers in After Effects
+1. In your active AE Comp, create two hidden text layers:
+   - `_STYLE_BASE` (Normal caption line)
+   - `_STYLE_ACCENT` (Emphasis line)
+2. Run `File > Scripts > Run Script File…` ➔ select `build_subs.jsx` ➔ choose `vo_01.captions.json`.
+3. All subtitle text layers will be created with word markers, correct timing, and master styling!
 
-## 3) Build layers in After Effects
-1. In your comp create two hidden text layers styled how you like:
-   `_STYLE_BASE` (normal line) and `_STYLE_ACCENT` (emphasis line). Turn their eye OFF.
-   Their position sets where the block sits. *(If missing, the script makes plain white
-   defaults so it still runs — restyle them once and re-run.)*
-2. `File > Scripts > Run Script File…` → pick `build_subs.jsx` → choose your `.captions.json`.
-3. Layers appear: one per line, correct in/out, row-stacked, word markers on each layer,
-   accent lines colored differently in the timeline.
+---
 
-**Re-run is idempotent** — it removes the previous sub layers first, so edit the
-JSON or config and just run again. One Undo reverts the whole build. Style lives on the two
-master layers, so changing the look = editing two layers, not 60.
+## 🏷 Keywords & Topics (SEO)
+`after-effects` `subtitles` `captions` `elevenlabs` `text-to-speech` `motion-design` `extendscript` `jsx` `kinetic-typography` `auto-captions` `tiktok-editing` `reels-editing` `youtube-shorts`
