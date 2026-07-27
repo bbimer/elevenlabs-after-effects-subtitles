@@ -1,0 +1,17 @@
+{
+  "maxCharsPerLine": 22,
+  "hardMaxCharsPerLine": 26,
+  "maxLines": 3,
+  "targetLines": 2,
+  "maxCharsPerPage": 66,
+  "gapThreshold": 0.30,
+  "minPageDur": 0.8,
+  "maxPageDur": 3.5,
+  "maxCPS": 17,
+  "leadIn": 0.08,
+  "tailOut": 0.15,
+  "snapGap": 0.12,
+  "casing": "upper",
+  "stripFinalPeriod": true,
+  "emphasisPolicy": "own-line"
+}
