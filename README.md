@@ -1,8 +1,7 @@
-# NULLSPREAD — AE Subtitle Pipeline (Phase 0)
+# NS Kinetic Typography Engine — AE Subtitle Pipeline
 
-Turns an ElevenLabs VO into ready-to-style subtitle **text layers** in After Effects.
-Script does the boring part (text placed, timed, broken into human lines). You do
-the creative part (Motion Composer, animations, Sapphire) — nothing is animated for you.
+Turns an ElevenLabs VO into ready-to-style subtitle **text layers** in After Effects for high-speed video production.
+Script handles the timing, pagination, and placement — you focus on the creative motion design.
 
 ```
 script.txt ──▶ vo_generate.js ──▶ vo.mp3 + vo.align.json
@@ -24,14 +23,14 @@ Write your script as plain text. Write numbers **the way they should appear on s
 (`$0.41`, `12.3%`) — the model speaks them correctly and timings map back to what you typed.
 Mark an emphasis word/phrase with `*asterisks*` → it becomes an accent line.
 
-```
+```bash
 ELEVENLABS_API_KEY=xi-... \
 node vo_generate.js --text script.txt --voice <VOICE_ID> --out vo_delisting_01 --format wav
 ```
 → `vo_delisting_01.wav` + `vo_delisting_01.align.json`
 
 ## 2) Compile captions
-```
+```bash
 node caption_compile.js vo_delisting_01.align.json --config compile.config.json
 ```
 → `vo_delisting_01.captions.json` (prints a page-by-page preview; flags warnings, never "fixes" silently)
@@ -47,15 +46,6 @@ Tune everything in `compile.config.json` (chars/line, durations, casing, emphasi
 3. Layers appear: one per line, correct in/out, row-stacked, word markers on each layer,
    accent lines colored differently in the timeline.
 
-**Re-run is idempotent** — it removes the previous NULLSPREAD sub layers first, so edit the
+**Re-run is idempotent** — it removes the previous sub layers first, so edit the
 JSON or config and just run again. One Undo reverts the whole build. Style lives on the two
 master layers, so changing the look = editing two layers, not 60.
-
-## Notes
-- Emphasis policy `own-line` pulls emphasized words onto their own accent line (like a
-  handwritten highlight). `line` = mark the whole line accent if it contains an emphasis word.
-  `off` = ignore emphasis.
-- No speech-to-text involved on this path: text is your exact script, timings come from the
-  synthesizer. Whisper fallback + SRT import are Phase 2.
-- `build_subs.jsx` layout constants (baseY %, leading %, center X, label colors) are at the
-  top of the file — later these move into a CEP panel (Phase 1).

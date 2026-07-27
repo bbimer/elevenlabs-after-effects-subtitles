@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * vo_generate.js — NULLSPREAD VO generator (Phase 0)
+ * vo_generate.js — NS VO generator (Phase 0)
  *
  * Text -> ElevenLabs TTS with character-level timestamps.
  * Saves:  {out}.mp3|.wav  +  {out}.align.json  (timing sidecar for caption_compile.js)

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * caption_compile.js — NULLSPREAD caption compiler (Phase 0)
+ * caption_compile.js — NS caption compiler (Phase 0)
  *
  * {out}.align.json  ->  {out}.captions.json
  * Turns character-level TTS alignment into caption "pages" of 1-3 lines,

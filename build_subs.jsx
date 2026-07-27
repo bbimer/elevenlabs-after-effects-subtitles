@@ -1,5 +1,5 @@
 /**********************************************************************
- * build_subs.jsx  —  NULLSPREAD subtitle builder for After Effects
+ * build_subs.jsx  —  NS Kinetic Typography subtitle builder for After Effects
  * Phase 0 (no panel). Run via File > Scripts > Run Script File…
  *
  * Reads a *.captions.json (from caption_compile.js) and builds one TEXT
@@ -20,7 +20,7 @@
  *      with correct in/out, row positions, word markers, label colors.
  *   4) Do your thing: Motion Composer, animations, effects.
  *
- * RE-RUN = idempotent. Existing NULLSPREAD sub layers are removed first,
+ * RE-RUN = idempotent. Existing NS sub layers are removed first,
  * so tweak the JSON / config and just run again. One Undo reverts all.
  *
  * Layout constants below — edit to taste (or drive from a panel later).
@@ -54,9 +54,9 @@
   catch (e) { alert('Could not parse JSON:\n' + e.toString()); return; }
   if (!data || !data.pages || !data.pages.length) { alert('No pages in this captions file.'); return; }
 
-  app.beginUndoGroup('NULLSPREAD — build subtitles');
+  app.beginUndoGroup('NS Subtitles — build subtitles');
   try {
-    // remove previous NULLSPREAD layers
+    // remove previous NS layers
     for (var i = comp.numLayers; i >= 1; i--) {
       var Ly = comp.layer(i);
       if (Ly.comment && Ly.comment.indexOf(CFG.tag + ':') === 0) Ly.remove();
@@ -123,7 +123,7 @@
       }
     }
 
-    alert('NULLSPREAD subs built.\n' + built + ' line layers across ' + data.pages.length + ' pages.' +
+    alert('NS subs built.\n' + built + ' line layers across ' + data.pages.length + ' pages.' +
           (warned ? ('\n' + warned + ' page(s) had compiler warnings — check the JSON.') : ''));
   } catch (err) {
     alert('Build error:\n' + err.toString());
@@ -149,7 +149,7 @@
     L.property('Source Text').setValue(t);
     L.property('Transform').property('Position').setValue([c.width / 2, c.height * 0.72]);
     L.enabled = false;
-    L.comment = 'NULLSPREAD master (restyle me, keep hidden)';
+    L.comment = 'NS master (restyle me, keep hidden)';
     return L;
   }
   function pad(n, w) { n = '' + n; while (n.length < w) n = '0' + n; return n; }
