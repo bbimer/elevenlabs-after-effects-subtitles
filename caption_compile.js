@@ -33,10 +33,10 @@ const DEFAULTS = {
   maxLines: 3,
   targetLines: 2,
   maxCharsPerPage: 66,
-  gapThreshold: 0.30,       // s of silence that forces a page break (TTS pauses are short)
-  minPageDur: 0.8,
-  maxPageDur: 3.5,
-  maxCPS: 17,               // reading speed, display chars / sec
+  gapThreshold: 1.20,       // s of silence that forces a page break (1.2s)
+  minPageDur: 1.5,          // min duration for a multi-word page
+  maxPageDur: 5.0,          // max duration for a sentence page
+  maxCPS: 22,               // reading speed, display chars / sec
   leadIn: 0.08,             // page may appear up to this much BEFORE first word
   tailOut: 0.15,            // page holds this much after last word
   snapGap: 0.12,            // if gap to next page < this -> butt-join (no flicker gap)
@@ -65,11 +65,23 @@ const words = []; // {w, s, e, i0, i1, em}
   let cur = null;
   for (let i = 0; i < chars.length; i++) {
     const c = chars[i];
-    if (/\s/.test(c)) { if (cur) { words.push(cur); cur = null; } continue; }
+    if (/\s/.test(c)) {
+      if (cur) {
+        if (cur.e <= cur.s) cur.e = cur.s + 0.25;
+        words.push(cur);
+        cur = null;
+      }
+      continue;
+    }
     if (!cur) cur = { w: '', s: cs[i], e: ce[i], i0: i, i1: i, em: false };
-    cur.w += c; cur.e = ce[i]; cur.i1 = i;
+    cur.w += c;
+    if (ce[i] >= cs[i]) cur.e = ce[i];
+    cur.i1 = i;
   }
-  if (cur) words.push(cur);
+  if (cur) {
+    if (cur.e <= cur.s) cur.e = cur.s + 0.25;
+    words.push(cur);
+  }
 }
 
 // emphasis spans are char-indices into text_plain; alignment chars should be 1:1 with it
@@ -115,17 +127,36 @@ const rawPages = [];
   flush();
 }
 
-// merge orphans / too-short pages into a neighbour
+// merge orphans / too-short pages into a neighbour (backward or forward)
 const pagesW = [];
 for (let i = 0; i < rawPages.length; i++) {
   const p = rawPages[i];
   const dur = p[p.length - 1].e - p[0].s;
-  const isOrphan = (p.length === 1 && wlen(p[0]) <= 4) || dur < cfg.minPageDur;
-  if (isOrphan && pagesW.length) {
-    const prev = pagesW[pagesW.length - 1];
-    const mergedLen = textOf(prev).length + 1 + textOf(p).length;
-    const gap = p[0].s - prev[prev.length - 1].e;
-    if (mergedLen <= cfg.maxCharsPerPage * 1.25 && gap < cfg.gapThreshold) { prev.push(...p); continue; }
+  const isOrphan = (p.length <= 2 && textOf(p).length <= 8) || dur < cfg.minPageDur;
+
+  if (isOrphan) {
+    var merged = false;
+    // 1. Try merging backward into prev page
+    if (pagesW.length) {
+      const prev = pagesW[pagesW.length - 1];
+      const mergedLen = textOf(prev).length + 1 + textOf(p).length;
+      if (mergedLen <= cfg.maxCharsPerPage * 1.35) {
+        prev.push(...p);
+        merged = true;
+        continue;
+      }
+    }
+    // 2. Try merging forward into next raw page
+    if (!merged && i + 1 < rawPages.length) {
+      rawPages[i + 1].unshift(...p);
+      merged = true;
+      continue;
+    }
+    // 3. Last resort: force merge backward
+    if (!merged && pagesW.length) {
+      pagesW[pagesW.length - 1].push(...p);
+      continue;
+    }
   }
   pagesW.push(p);
 }
@@ -269,7 +300,8 @@ const pages = [];
 for (let i = 0; i < pagesW.length; i++) {
   const ws = pagesW[i];
   const { lines, warn } = linesForPage(ws);
-  const start0 = ws[0].s, end0 = ws[ws.length - 1].e;
+  const start0 = ws[0].s;
+  const end0 = Math.max.apply(null, ws.map(function(w){ return w.e; }).concat([start0 + 0.5]));
   const prevEnd = pages.length ? pages[pages.length - 1].end : 0;
   let start = Math.max(start0 - cfg.leadIn, prevEnd);
   let end = end0 + cfg.tailOut;
