@@ -36,6 +36,7 @@
     labelAccent: 9,      // AE label color index for accent lines
     addWordMarkers: true,
     addPageMarkersToComp: true,
+    clearOld: false,     // append by default, don't clear previous takes
     tag: 'nsub'          // layer.comment marker = tag:{pageId}
   };
   var MASTER_BASE = '_STYLE_BASE', MASTER_ACCENT = '_STYLE_ACCENT';
@@ -56,22 +57,33 @@
 
   app.beginUndoGroup('NS Subtitles — build subtitles');
   try {
-    // remove previous NS layers
-    for (var i = comp.numLayers; i >= 1; i--) {
-      var Ly = comp.layer(i);
-      if (Ly.comment && Ly.comment.indexOf(CFG.tag + ':') === 0) Ly.remove();
+    // remove previous NS layers only if requested
+    if (CFG.clearOld) {
+      for (var i = comp.numLayers; i >= 1; i--) {
+        var Ly = comp.layer(i);
+        if (Ly.comment && Ly.comment.indexOf(CFG.tag + ':') === 0) Ly.remove();
+      }
     }
+
+    var pageOffset = CFG.clearOld ? 0 : getMaxPageId(comp, CFG.tag);
 
     var masterBase = findLayer(comp, MASTER_BASE) || makeMaster(comp, MASTER_BASE, false);
     var masterAcc  = findLayer(comp, MASTER_ACCENT) || makeMaster(comp, MASTER_ACCENT, true);
+    masterBase.enabled = false;
+    masterAcc.enabled = false;
 
     var baseY = comp.height * CFG.baseYpct;
     var leading = comp.height * CFG.leadingPct;
+    var timeOffset = comp.time || 0;
     var built = 0, warned = 0;
 
     for (var p = 0; p < data.pages.length; p++) {
       var page = data.pages[p];
+      var curPageId = page.id + pageOffset;
       var lines = page.lines || [];
+      var pageStart = (page.start || 0) + timeOffset;
+      var pageEnd = (page.end || page.start + 1.5) + timeOffset;
+
       // vertical centering of the block around baseY (so 2- vs 3-line pages sit consistently)
       var blockOffset = -((lines.length - 1) / 2) * leading;
 
@@ -82,8 +94,8 @@
 
         var L = master.duplicate();
         L.enabled = true;
-        L.name = 'CAP' + pad(page.id, 3) + '_' + (isAcc ? 'ACC' : ('L' + (li + 1)));
-        L.comment = CFG.tag + ':' + page.id;
+        L.name = 'CAP' + pad(curPageId, 3) + '_' + (isAcc ? 'ACC' : ('L' + (li + 1)));
+        L.comment = CFG.tag + ':' + curPageId;
         L.label = isAcc ? CFG.labelAccent : CFG.labelBase;
 
         // text (inherits font/stroke/animators/effects from the master)
@@ -94,37 +106,41 @@
 
         // position: stack rows from baseY; optionally center X
         var pos = L.property('Transform').property('Position');
-        var curX = pos.value[0];
-        var x = CFG.centerX ? (comp.width / 2) : curX;
-        var y = baseY + blockOffset + li * leading;
-        pos.setValue([x, y]);
+        var posX = CFG.centerX ? (comp.width / 2) : pos.value[0];
+        var posY = baseY + blockOffset + li * leading;
+        pos.setValue([posX, posY]);
 
         // timing
-        L.inPoint = page.start;
-        L.outPoint = page.end;
+        L.inPoint = pageStart;
+        L.outPoint = pageEnd;
 
-        // word markers (relative to layer start so they ride with it if moved)
-        if (CFG.addWordMarkers && line.words) {
-          var mk = L.property('Marker');
-          for (var w = 0; w < line.words.length; w++) {
-            var t = line.words[w].s;
-            if (t >= page.start && t <= page.end) {
-              var mv = new MarkerValue(line.words[w].w);
-              mk.setValueAtTime(t, mv);
-            }
+        // per-word layer markers for easy timing tweaks / animator triggers
+        if (CFG.addWordMarkers && line.words && line.words.length) {
+          for (var wi = 0; wi < line.words.length; wi++) {
+            var w = line.words[wi];
+            if (w.s === undefined) continue;
+            var wTime = w.s + timeOffset;
+            var mv = new MarkerValue(w.w);
+            if (w.e !== undefined && w.e > w.s) mv.duration = w.e - w.s;
+            L.property('Marker').setValueAtTime(wTime, mv);
           }
         }
         built++;
       }
-      if (page.warnings && page.warnings.length) warned++;
+
+      // composition markers per page (visible on the comp ruler)
       if (CFG.addPageMarkersToComp) {
-        var cm = comp.markerProperty || null;
-        if (cm) { try { cm.setValueAtTime(page.start, new MarkerValue('P' + page.id)); } catch (e) {} }
+        try {
+          var firstLine = (lines[0] && lines[0].text) ? lines[0].text : ('Page ' + curPageId);
+          var cmv = new MarkerValue('P' + curPageId + ': ' + firstLine);
+          cmv.duration = Math.max(0.1, pageEnd - pageStart);
+          comp.markerProperty.setValueAtTime(pageStart, cmv);
+        } catch (e) { /* non-fatal */ }
       }
     }
 
-    alert('NS subs built.\n' + built + ' line layers across ' + data.pages.length + ' pages.' +
-          (warned ? ('\n' + warned + ' page(s) had compiler warnings — check the JSON.') : ''));
+    if (warned) alert('Built ' + built + ' layers.\n(' + warned + ' words were clamped to fit timing)');
+    else alert('NS subs built.\n' + built + ' line layers across ' + data.pages.length + ' pages.');
   } catch (err) {
     alert('Build error:\n' + err.toString());
   } finally {

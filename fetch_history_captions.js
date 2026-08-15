@@ -55,6 +55,7 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
   const combinedCharacters = [];
   const combinedStartTimes = [];
   const combinedEndTimes = [];
+  const combinedParts = [];
   let combinedText = '';
   let timeOffset = 0;
   const audioBuffers = [];
@@ -95,11 +96,21 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
     const alg = item.alignments.alignment;
     const itemText = item.text || alg.characters.join('');
 
+    // If not the first audio part, insert space separator into character alignment
+    if (idx > 0 && combinedCharacters.length > 0) {
+      var lastEnd = combinedEndTimes[combinedEndTimes.length - 1] || timeOffset;
+      combinedCharacters.push(' ');
+      combinedStartTimes.push(lastEnd);
+      combinedEndTimes.push(timeOffset);
+      combinedParts.push(idx);
+    }
+
     // Offset timestamps relative to previous parts
     for (let c = 0; c < alg.characters.length; c++) {
       combinedCharacters.push(alg.characters[c]);
       combinedStartTimes.push(alg.character_start_times_seconds[c] + timeOffset);
       combinedEndTimes.push(alg.character_end_times_seconds[c] + timeOffset);
+      combinedParts.push(idx);
     }
 
     // Add space between text parts
@@ -126,7 +137,8 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
     alignment: {
       characters: combinedCharacters,
       character_start_times_seconds: combinedStartTimes,
-      character_end_times_seconds: combinedEndTimes
+      character_end_times_seconds: combinedEndTimes,
+      character_parts: combinedParts
     }
   };
 
