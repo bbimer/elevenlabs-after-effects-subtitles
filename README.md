@@ -1,6 +1,6 @@
-# ElevenLabs After Effects Subtitles (v2.3)
+# ElevenLabs After Effects Subtitles (v2.6)
 
-Automated ElevenLabs TTS to Adobe After Effects Subtitle Pipeline & Native ScriptUI Dockable Panel GUI.
+Automated ElevenLabs TTS to Adobe After Effects Kinetic Typography Subtitle Pipeline & Native ScriptUI Dockable Panel GUI.
 
 [![After Effects](https://img.shields.io/badge/After_Effects-2020+-CC77FF?logo=adobeaftereffects&logoColor=white)](https://www.adobe.com/products/aftereffects.html)
 [![ElevenLabs](https://img.shields.io/badge/ElevenLabs-API_v1-000000?logo=elevenlabs&logoColor=white)](https://elevenlabs.io)
@@ -12,50 +12,66 @@ Automated ElevenLabs TTS to Adobe After Effects Subtitle Pipeline & Native Scrip
 
 ## Overview
 
-**ElevenLabs After Effects Subtitles v2.3** is a high-speed production pipeline and native After Effects GUI panel designed for short-form video creators (TikTok, Instagram Reels, YouTube Shorts).
+**ElevenLabs After Effects Subtitles v2.6** is a production-grade kinetic typography pipeline and native After Effects GUI panel engineered specifically for short-form video creators (TikTok, Instagram Reels, YouTube Shorts).
 
-It automatically converts ElevenLabs Voiceovers (or web-generated **Generation IDs**) into frame-accurate, pre-timed After Effects subtitle text layers. Featuring a **FreeFlow Studio-inspired dark GUI panel**, it supports **Custom Preset Management**, **Multi-Take Tagging (`[A]`, `[B]`, `[C]`, `[D]`)**, **Line 1 / Line 2 Visual Timeline Label Colors**, **1-Click Batch Selection Tools**, **Timeline Playhead (CTI) Sync**, **80ms Lead-In pre-display timing**, **Timeline-Aware Audio Syncing**, and full **Animation Composer (Mister Horse)** preset integration.
+It converts ElevenLabs Voiceovers (or web-generated **Generation IDs**) into frame-accurate, acoustically synchronized After Effects subtitle text layers. Featuring a **FreeFlow Studio-inspired dark GUI panel**, it supports **6 Kinetic Text Layout Modes**, **Semantic Clause Segmentation**, **Automatic ElevenLabs Prompt Tag Stripping**, **Smart Single-Word Punctuation Cleaning**, **15 Curated Aesthetic Multi-Take Timeline Colors**, **Animation Composer Marker Auto-Fitting (35% Speed)**, **7 Designer Style Presets & Custom Preset Management**, and full **Animation Composer (Mister Horse)** integration.
 
 ---
 
-## Key Features
+## Key Features in v2.6
 
-* **Custom Preset Manager (`user_presets.json`):**
-  * Save custom typography styles (Font, Size, Fill Color, Stroke, Tracking, All Caps, Italic) in 1 click (`💾 Save Preset...`).
-  * Saved presets are permanently stored in `user_presets.json` and appear with a `★` in the preset dropdown across projects.
-  * Delete outdated presets easily with `🗑️ Delete Preset`.
-* **Built-in Luxury Script Typography Preset:**
-  * Base Line: **Arial Black** (Bold, All Caps, Clean White).
-  * Accent Line: **Good Vibes Pro** (Elegant Cursive Script, Lowercase Accent).
-* **Smart Multilingual Clause Segmentation (`caption_compile.js`):**
-  * Broadcast-grade clause-level pagination splitting at punctuation marks (`,`, `;`, `:`, `—`, `–`, `-`, `...`, `…`, `.`, `!`, `?`) and acoustic pauses (0.35s+).
-  * Inseparable multi-word phrases prevention (`«один и тот же»`, `«тот же»`, `«на этом всё»`, `«exact same»`, `«split second»`, `«link in bio»`).
-  * Dangling prepositions & conjunctions guard (`NO_LINE_END` & `NO_LINE_START`) for Russian, Ukrainian, and English.
-* **Timeline Line 1 / Line 2 Visual Label Color Coding:**
-  * 🔷 **Line 1 (Top):** Tagged `[A_L1]`, color-coded with **Cyan (#14)**.
-  * 🔶 **Line 2 (Bottom):** Tagged `[A_L2]`, color-coded with **Orange (#11)**.
-  * 💖 **Accent Words:** Tagged `[A_ACC]`, color-coded with **Magenta / Fuchsia (#13)**.
-  * 🟢 **Single Word Pop:** Tagged `[A_W]`, color-coded with **Green (#9)**.
-  * *Right-click any label chip in AE timeline ➔ `Select Label Group` to select all matching lines in seconds!*
+* **🧠 Semantic Thought Clause Segmentation (`caption_compile.js`):**
+  * Subtitles are broken down by **complete semantic thoughts and clauses** rather than rigid mechanical 1-second chunks.
+  * Prevents awkward sentence cutoffs or single orphaned trailing words appearing alone on new screens.
+* **🏷️ Automatic ElevenLabs Prompt Tag Stripping & Accent Mapping:**
+  * Direct support for ElevenLabs technical voice prompts: `[emphasis]...[/emphasis]`, `[accent]...[/accent]`, `[whisper]...[/whisper]`, `[pause]`, `[surprised]`, `<emphasis>`, and `*...*`.
+  * Technical prompt tags are automatically stripped from the screen, while emphasized phrases (`8% дороже?`, `$2.6K`) are automatically styled with **`_STYLE_ACCENT`** (contrasting neon/gold colors and fonts).
+* **🧹 Smart Single-Word Punctuation Cleaner (Mode 2 & Mode 6):**
+  * In single-word flash modes, automatically removes visual punctuation clutter (commas `,`, periods `.`, dashes `-`, semicolons `;`, colons `:`, quotes `""`, ellipsis `...`).
+  * Preserves high-energy emotional marks (`!`, `?`) and currency / percentage symbols (`%`, `$`, `€`, `£`, `₽`, `+100%`, `-50%`).
+* **⚡ 6 Kinetic Text Layout Modes:**
+  1. **Mode 1: Broadcast Block `[L]`** — 2-line smart line breaks with accent lines.
+  2. **Mode 2: Single Word Flash / Pop `[W]`** — 1 word at a time in center column (Hormozi / MrBeast style) with clean punctuation.
+  3. **Mode 3: Kinetic Cascade Ladder `[C]`** — Vertical ladder stacking with sequential line reveals.
+  4. **Mode 4: Highlight Tracker `[T]` + `[HI]`** — Full sentence text layer with isolated vector highlight bounding box.
+  5. **Mode 5: Single-Line Stream `[S]`** — Fast, punchy **1-line center subtitles** that keep the frame clean for graphics & footage.
+  6. **Mode 6: Karaoke Word-Fill `[K]` / `[KW]`** — Full sentence in sleek 35% opacity with active words glowing in vibrant neon accent as spoken (CapCut style).
+* **🌈 Top Aesthetic 15-Color Multi-Take Timeline Palette (`[A]`, `[B]`, `[C]`...):**
+  * Automatically detects subsequent generations on the timeline and cycles through 15 high-contrast designer colors:
+    * 🟦 **Take A (Phase 1):** Cyan (#14)
+    * 🟪 **Take B (Phase 2):** Magenta (#13)
+    * 🟧 **Take C (Phase 3):** Orange (#11)
+    * 🟣 **Take D (Phase 4):** Purple (#10)
+    * 🌊 **Take E (Phase 5):** Aqua / Seafoam (#3)
+    * 🟩 **Take F (Phase 6):** Green (#9)
+    * 🟨 **Take G (Phase 7):** Yellow (#2)
+    * 🌸 **Take H (Phase 8):** Pink (#4)
+    * 🔵 **Take I (Phase 9):** Blue (#8)
+    * 🪻 **Take J (Phase 10):** Lavender (#5)
+    * 🍑 **Take K (Phase 11):** Peach (#6)
+    * 🟥 **Take L (Phase 12):** Red (#1)
+    * 🌿 **Take M (Phase 13):** Dark Green (#16)
+* **🎵 Auto-Import & Place Audio Track (.mp3 / .wav) on Timeline:**
+  * Optional toggle `[ ] 🎵 Auto-Import & Place Audio Track` automatically imports the ElevenLabs voiceover into the project and positions it directly under the generated subtitle layers, tinted with the same take color.
+* **⚡ Animation Composer Marker Auto-Fit (35% Speed):**
+  * Automatically repositions `[TR In]` (In-Transition) markers across all (or selected) subtitle layers to a precise percentage of each layer's duration (default **35%**).
+  * Eliminates the tedious need to manually drag markers on 40+ layers — animation speed scales proportionally to word length in 0.1 seconds!
+* **🎨 7 Curated Designer Style Presets & Custom Preset Manager:**
+  * **✨ Luxury Editorial:** Clean bold white sans + Champagne Gold elegant script (*Good Vibes Pro / Georgia Italic*).
+  * **⚡ Tokyo Cyberpunk:** Electric Cyan base + Acid Neon Green accents with crisp black outlines.
+  * **🔥 Hormozi Viral:** Alex Hormozi signature gold yellow + punch red with heavy 6px black stroke.
+  * **💎 Crypto Terminal:** Electric Matrix green accent on clean white obsidian text.
+  * **🌅 Sunset Pop:** Vibrant tangerine orange + hot pink bubblegum accents.
+  * **🧊 Minimalist Clean:** Soft ice blue + pure white with wide letter spacing.
+  * **🖤 High-Contrast Viral:** Pure white + bright yellow with universal high-contrast black border.
+  * **Custom Preset Storage:** Save any customized master layer typography into `user_presets.json` in 1 click (`💾 Save Preset...`).
+* **100% Comprehensive Typography Style Syncing:**
+  * When updating or pushing master styles (`✨ Apply Style to Subtitles`), copies 100% of character & paragraph settings: **Vertical Scale**, **Horizontal Scale**, **Tracking**, **Auto-Leading**, **Baseline Shift**, **Faux Bold**, **All Caps**, **Fill**, **Stroke**, and **Paragraph Alignment**.
 * **1-Click Batch Timeline Selection Tools:**
   * `🔷 Select Line 1 (Top)` — selects all top-line subtitle layers across the active comp.
   * `🔶 Select Line 2 (Mid)` — selects all bottom-line subtitle layers.
-  * `💖 Select Accents` — selects all accent text layers.
+  * `💖 Select Accents` — selects all accent / highlight text layers.
   * `🎙️ Select Current Take` — selects all layers belonging to a specific voiceover part.
-* **Multi-Take Voiceover Tagging (`[A]`, `[B]`, `[C]`, `[D]`...):**
-  * Auto-tags multiple voiceover takes when fetching comma-separated Generation IDs.
-  * Selector dropdown allows manually choosing specific take tags (`Take A`, `Take B`, `Take C`, `Take D`, etc.).
-* **FreeFlow Studio Dark GUI Panel (`elevenlabs-after-effects-subtitles.jsx`):**
-  * Native dockable panel inside After Effects (`Window > elevenlabs-after-effects-subtitles`).
-* **Timeline Playhead (CTI) & Audio Layer Sync:**
-  * Generate subtitles starting at CTI (`comp.time`), or click **📍 Sync to Playhead (CTI)** / **🎵 Sync to Audio** to slide existing captions.
-* **4 Kinetic Text Layout Modes:**
-  1. **Mode 1: Broadcast Block `[L]`** — 2-line smart line breaks with accent lines.
-  2. **Mode 2: Single Word Flash / Pop `[W]`** — 1 word at a time in center column (Hormozi / MrBeast style).
-  3. **Mode 3: Kinetic Cascade Ladder `[C]`** — Vertical ladder stacking.
-  4. **Mode 4: Highlight Tracker `[T]` + `[HI]`** — Full sentence text layer with isolated vector highlight box.
-* **Animation Composer (Mister Horse) Integration:**
-  * **Auto-Centering Anchor Point:** Automatically calculates `sourceRectAtTime()` and sets Anchor Point to exact Center-Center `[left + width/2, top + height/2]` for clean scale bounces without position drift.
 * **Auto-Scaling & Safety Guard (85%):**
   * Automatically scales down long words so text never overflows 9:16 vertical video borders or gets covered by TikTok / Instagram UI icons.
 
@@ -68,7 +84,7 @@ It automatically converts ElevenLabs Voiceovers (or web-generated **Generation I
    `C:\Program Files\Adobe\Adobe After Effects <Version>\Support Files\Scripts\ScriptUI Panels\`  
    *(or run `deploy.bat` to automatically deploy to installed AE versions)*.
 2. Restart After Effects.
-3. Open panel via top menu: **`Window` ➔ `elevenlabs-after-effects-subtitles`**.
+3. Open panel via top menu: **`Window` ➔ `elevenlabs-after-effects-subtitles.jsx`**.
 
 ### Option 2: Direct Script Execution
 1. In After Effects, navigate to **`File` ➔ `Scripts` ➔ `Run Script File…`**
@@ -99,21 +115,23 @@ node vo_generate.js --text script.txt --voice <VOICE_ID> --out vo_01
 
 ---
 
-## Technical Specifications
+## Repository Structure
 
-| Parameter | Value |
-|---|---|
-| Panel Language | ExtendScript (JSX / ScriptUI) |
-| Alignment Engine | ElevenLabs Per-Character API / Forced Alignment |
-| Default Lead-In | 80 ms (Pre-display offset) |
-| Default Tail-Out | 150 ms (Hold duration) |
-| Safe Margin Guard | 85% Max Comp Width Auto-Scale |
-| Default Baseline | 72% Y-Axis (Lower Third) |
-| System Prefixes | `[A_L1]`, `[A_L2]`, `[A_ACC]`, `[A_W]`, `[A_C]`, `[A_T]`, `[A_HI]` |
-| Timeline Labels | Cyan (#14) Line 1, Orange (#11) Line 2, Magenta (#13) Accent, Green (#9) Word |
+```
+ae-subs/
+├── elevenlabs-after-effects-subtitles.jsx  # Complete ScriptUI GUI panel for After Effects
+├── build_subs.jsx                          # Standalone direct ExtendScript builder
+├── caption_compile.js                      # Semantic clause-level phonetic caption compiler
+├── fetch_history_captions.js               # ElevenLabs API history & alignment fetcher
+├── align_audio.js                          # Audio alignment utility
+├── vo_generate.js                          # Direct TTS generation utility
+├── deploy.bat                              # 1-click deploy to After Effects ScriptUI directory
+├── user_presets.json                       # Persistent user presets storage
+└── .env.example                            # API configuration template
+```
 
 ---
 
 ## License
 
-MIT License. Free for personal and commercial video production.
+MIT © [bbimer](https://github.com/bbimer)

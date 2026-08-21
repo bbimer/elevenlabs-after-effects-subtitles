@@ -43,26 +43,58 @@
     stylePreset: 0,
     anchorAlign: 'center', // 'center' or 'bottom'
     usePrefixes: true,
+    autoAddAudio: false,
     tag: 'nsub'
   };
 
   var MASTER_BASE = '_STYLE_BASE', MASTER_ACCENT = '_STYLE_ACCENT';
   var BUILTIN_PRESETS = [
     'None (Custom Manual — Keep Master Layers)',
-    'Luxury Script (Arial Black + Good Vibes Pro)',
-    'Nullspread Neon (Cyan/Green Glow)',
-    'Hormozi Gold (Yellow/Red Stroke)',
-    'Minimalist Clean (Drop Shadow)'
+    '✨ Luxury Editorial (White Sans + Champagne Gold Script)',
+    '⚡ Tokyo Cyberpunk (Cyan Base + Acid Green Accent)',
+    '🔥 Hormozi Viral (Gold Yellow + Punch Red Stroke)',
+    '💎 Crypto Terminal (Electric Matrix Green + White)',
+    '🌅 Sunset Pop (Vibrant Tangerine + Hot Pink)',
+    '🧊 Minimalist Clean (Ice Blue + Pure White)',
+    '🖤 High-Contrast Viral (Black Stroke + Bright Yellow)'
   ];
 
-  var TAKE_LETTERS = ['Auto', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  var TAKE_LETTERS = ['Auto', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 
-  // AE Label Color Indices (0-16):
-  // 14: Cyan (Голубой - Line 1)
-  // 11: Orange (Оранжевый - Line 2)
-  // 13: Fuchsia / Magenta (Пурпурный/Розовый - Accent)
-  // 9:  Green (Зеленый - Words)
-  // 5:  Lavender (Лаванда - Line 3)
+  // AE Timeline Label Colors mapped to each Take phase (0-16):
+  // Take A: 14 (Cyan — Электрик циан / ярко-голубой)
+  // Take B: 13 (Magenta — Неоновая фуксия / розово-малиновый)
+  // Take C: 11 (Orange — Тёплый апельсиновый)
+  // Take D: 10 (Purple — Глубокий неоновый фиолетовый)
+  // Take E: 3  (Aqua / Seafoam — Морская волна / бирюзовый)
+  // Take F: 9  (Green — Сочный лаймовый зелёный)
+  // Take G: 2  (Yellow — Солнечный жёлтый)
+  // Take H: 4  (Pink — Мягкий конфетный розовый)
+  // Take I: 8  (Blue — Королевский синий)
+  // Take J: 5  (Lavender — Пастельная лаванда)
+  // Take K: 6  (Peach — Персиковый коралл)
+  // Take L: 1  (Red — Рубиновый красный)
+  // Take M: 16 (Dark Green — Благородный изумруд)
+  // Take N: 15 (Sandstone — Песочный)
+  // Take O: 7  (Tan — Бежевый)
+  var TAKE_LABEL_COLORS = {
+    'A': 14, // Cyan (Электрик циан)
+    'B': 13, // Magenta (Неоновая фуксия)
+    'C': 11, // Orange (Апельсиновый)
+    'D': 10, // Purple (Неоновый фиолетовый)
+    'E': 3,  // Aqua (Бирюзовый)
+    'F': 9,  // Green (Сочный зелёный)
+    'G': 2,  // Yellow (Солнечный жёлтый)
+    'H': 4,  // Pink (Розовый)
+    'I': 8,  // Blue (Синий)
+    'J': 5,  // Lavender (Лавандовый)
+    'K': 6,  // Peach (Персиковый)
+    'L': 1,  // Red (Красный)
+    'M': 16, // Dark Green (Изумрудный)
+    'N': 15, // Sandstone (Песочный)
+    'O': 7   // Tan (Бежевый)
+  };
+
   var LABEL_L1 = 14;
   var LABEL_L2 = 11;
   var LABEL_ACC = 13;
@@ -186,7 +218,9 @@
       'Mode 1: Broadcast Block (2-Line Smart Break)',
       'Mode 2: Single Word Flash / Pop (1-Word Center)',
       'Mode 3: Kinetic Cascade Ladder (Vertical Stack)',
-      'Mode 4: Highlight Tracker (Full Sentence)'
+      'Mode 4: Highlight Tracker (Full Sentence Box)',
+      'Mode 5: Single-Line Stream (1-Line Center / Dynamic Chunk)',
+      'Mode 6: Karaoke Word-Fill (Active Word Glow / CapCut Style)'
     ]);
     dropMode.alignment = ['fill', 'center'];
     dropMode.selection = 0;
@@ -223,6 +257,9 @@
     var lblLead = gLead.add('statictext', undefined, CFG.leadInMs + ' ms');
     lblLead.preferredSize.width = 50;
     sldLead.onChanging = function () { lblLead.text = Math.round(sldLead.value) + ' ms'; };
+
+    var chkAddAudio = pnlModes.add('checkbox', undefined, '🎵 Auto-Import & Place Audio Track (.mp3) on Timeline');
+    chkAddAudio.value = CFG.autoAddAudio;
 
     var chkClearOld = pnlModes.add('checkbox', undefined, 'Replace existing subtitles (clear all first)');
     chkClearOld.value = false;
@@ -339,6 +376,31 @@
     btnSelectAcc.alignment = ['fill', 'center'];
     var btnSelectTake = gSelRow2.add('button', undefined, '🎙️ Select Current Take');
     btnSelectTake.alignment = ['fill', 'center'];
+
+    // SECTION 6: ANIMATION COMPOSER MARKER AUTO-FIT (35%)
+    var pnlMarkers = win.add('panel', undefined, '6. Animation Composer Marker Auto-Fit (Speed)');
+    pnlMarkers.orientation = 'column';
+    pnlMarkers.alignChildren = ['fill', 'top'];
+    pnlMarkers.spacing = 4;
+    pnlMarkers.margins = 8;
+
+    var gMarkerSlider = pnlMarkers.add('group');
+    gMarkerSlider.orientation = 'row';
+    gMarkerSlider.alignChildren = ['fill', 'center'];
+    gMarkerSlider.add('statictext', undefined, 'TR In Marker Position:');
+    var sldMarkerPct = gMarkerSlider.add('slider', undefined, 35, 10, 80);
+    var lblMarkerPct = gMarkerSlider.add('statictext', undefined, '35%');
+    lblMarkerPct.preferredSize.width = 35;
+    sldMarkerPct.onChanging = function () { lblMarkerPct.text = Math.round(sldMarkerPct.value) + '%'; };
+
+    var gMarkerBtns = pnlMarkers.add('group');
+    gMarkerBtns.orientation = 'row';
+    gMarkerBtns.alignChildren = ['fill', 'center'];
+    gMarkerBtns.spacing = 4;
+    var btnFitMarkersSel = gMarkerBtns.add('button', undefined, '⚡ Fit Selected Layers (35%)');
+    btnFitMarkersSel.alignment = ['fill', 'center'];
+    var btnFitMarkersAll = gMarkerBtns.add('button', undefined, '⚡ Fit ALL Subtitles (35%)');
+    btnFitMarkersAll.alignment = ['fill', 'center'];
 
     // BOTTOM ACTION BUTTONS
     var gActions = win.add('group');
@@ -472,11 +534,11 @@
       var count = 0;
       for (var i = 1; i <= comp.numLayers; i++) {
         var L = comp.layer(i);
-        var isL1 = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_L1') !== -1 || L.name.indexOf('_C1') !== -1 || L.name.indexOf('_TEXT') !== -1));
+        var isL1 = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_L1') !== -1 || L.name.indexOf('_C1') !== -1 || L.name.indexOf('_S1') !== -1 || L.name.indexOf('_TEXT') !== -1 || L.name.indexOf('_KB') !== -1));
         L.selected = isL1;
         if (isL1) count++;
       }
-      statusTxt.text = '| Selected ' + count + ' Line 1 layers (Cyan).';
+      statusTxt.text = '| Selected ' + count + ' Line 1 / Base layers.';
     };
 
     btnSelectL2.onClick = function () {
@@ -485,11 +547,11 @@
       var count = 0;
       for (var i = 1; i <= comp.numLayers; i++) {
         var L = comp.layer(i);
-        var isL2 = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_L2') !== -1 || L.name.indexOf('_C2') !== -1));
+        var isL2 = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_L2') !== -1 || L.name.indexOf('_C2') !== -1 || L.name.indexOf('_S2') !== -1));
         L.selected = isL2;
         if (isL2) count++;
       }
-      statusTxt.text = '| Selected ' + count + ' Line 2 layers (Orange).';
+      statusTxt.text = '| Selected ' + count + ' Line 2 layers.';
     };
 
     btnSelectAcc.onClick = function () {
@@ -498,11 +560,11 @@
       var count = 0;
       for (var i = 1; i <= comp.numLayers; i++) {
         var L = comp.layer(i);
-        var isAcc = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_ACC') !== -1 || L.name.indexOf('_HI') !== -1));
+        var isAcc = (L.comment && L.comment.indexOf(CFG.tag + ':') === 0 && (L.name.indexOf('_ACC') !== -1 || L.name.indexOf('_HI') !== -1 || L.name.indexOf('_KW') !== -1));
         L.selected = isAcc;
         if (isAcc) count++;
       }
-      statusTxt.text = '| Selected ' + count + ' Accent layers (Magenta).';
+      statusTxt.text = '| Selected ' + count + ' Accent / Highlight layers.';
     };
 
     btnSelectTake.onClick = function () {
@@ -517,6 +579,40 @@
         if (isTake) count++;
       }
       statusTxt.text = '| Selected ' + count + ' layers for Take [' + chosenTake + '].';
+    };
+
+    btnFitMarkersSel.onClick = function () {
+      var comp = app.project.activeItem;
+      if (!(comp && comp instanceof CompItem)) { alert('Open a composition first!'); return; }
+      app.beginUndoGroup('NS Subtitles — Fit AC Markers (Selected)');
+      try {
+        var pctVal = Math.round(sldMarkerPct.value);
+        var count = fitAnimationComposerMarkers(comp, pctVal, true);
+        if (count === 0) {
+          statusTxt.text = '| No AC markers found on selected layers.';
+          alert('No Animation Composer markers found on selected layers.\n\nMake sure you selected subtitle layers that have Animation Composer applied.');
+        } else {
+          statusTxt.text = '| Fitted TR In markers on ' + count + ' selected layers to ' + pctVal + '%!';
+        }
+      } catch (e) { alert('Marker fit error: ' + e.toString()); }
+      app.endUndoGroup();
+    };
+
+    btnFitMarkersAll.onClick = function () {
+      var comp = app.project.activeItem;
+      if (!(comp && comp instanceof CompItem)) { alert('Open a composition first!'); return; }
+      app.beginUndoGroup('NS Subtitles — Fit AC Markers (All)');
+      try {
+        var pctVal = Math.round(sldMarkerPct.value);
+        var count = fitAnimationComposerMarkers(comp, pctVal, false);
+        if (count === 0) {
+          statusTxt.text = '| No AC markers found on subtitle layers.';
+          alert('No Animation Composer markers found on subtitle layers.\n\nApply an Animation Composer transition to your subtitle layers first, then click this button.');
+        } else {
+          statusTxt.text = '| Fitted TR In markers on ' + count + ' subtitle layers to ' + pctVal + '%!';
+        }
+      } catch (e) { alert('Marker fit error: ' + e.toString()); }
+      app.endUndoGroup();
     };
 
     btnFetch.onClick = function () {
@@ -555,31 +651,47 @@
       if (!audioLayer) { alert('No audio layer found in this composition!\n\nMake sure you have an audio file (.mp3, .wav, etc.) added to the timeline.'); return; }
 
       var audioStart = audioLayer.inPoint;
+      var audioEnd = audioLayer.outPoint;
+      var audioDur = audioEnd - audioStart;
 
-      app.beginUndoGroup('NS Subtitles — Sync Audio Timeline');
+      app.beginUndoGroup('NS Subtitles — Sync & Fit Audio Timeline');
       try {
         var subLayers = [];
         var earliestIn = Infinity;
+        var latestOut = -Infinity;
+
+        var hasSelection = false;
+        for (var selCheck = 1; selCheck <= comp.numLayers; selCheck++) {
+          if (comp.layer(selCheck).selected && comp.layer(selCheck).comment && comp.layer(selCheck).comment.indexOf(CFG.tag + ':') === 0) {
+            hasSelection = true;
+            break;
+          }
+        }
+
         for (var i = 1; i <= comp.numLayers; i++) {
           var Ly = comp.layer(i);
           if (Ly.comment && Ly.comment.indexOf(CFG.tag + ':') === 0) {
+            if (hasSelection && !Ly.selected) continue;
             subLayers.push(Ly);
             if (Ly.inPoint < earliestIn) earliestIn = Ly.inPoint;
+            if (Ly.outPoint > latestOut) latestOut = Ly.outPoint;
           }
         }
 
         if (subLayers.length === 0) {
           statusTxt.text = '| No subtitle layers found to sync.';
         } else {
-          var delta = audioStart - earliestIn;
-
-          if (Math.abs(delta) < 0.002) {
-            statusTxt.text = '| Subtitles already aligned with audio (' + audioStart.toFixed(2) + 's).';
-          } else {
+          var capDur = latestOut - earliestIn;
+          if (capDur > 0.3 && audioDur > 0.3) {
+            var ratio = audioDur / capDur;
             for (var s = 0; s < subLayers.length; s++) {
-              subLayers[s].startTime += delta;
+              var L = subLayers[s];
+              var relIn = L.inPoint - earliestIn;
+              var relOut = L.outPoint - earliestIn;
+              L.inPoint = audioStart + (relIn * ratio);
+              L.outPoint = audioStart + (relOut * ratio);
             }
-            statusTxt.text = '| Synced ' + subLayers.length + ' layers to audio at ' + audioStart.toFixed(2) + 's (shifted ' + (delta > 0 ? '+' : '') + delta.toFixed(2) + 's).';
+            statusTxt.text = '| Fitted & synced ' + subLayers.length + ' layers to audio (' + audioDur.toFixed(2) + 's, speed ' + ratio.toFixed(2) + 'x)!';
           }
         }
       } catch (e) { alert('Sync error: ' + e.toString()); }
@@ -678,6 +790,7 @@
       CFG.stylePreset = dropPreset.selection.index;
       CFG.anchorAlign = radAnchorCenter.value ? 'center' : 'bottom';
       CFG.usePrefixes = chkPrefixes.value;
+      CFG.autoAddAudio = chkAddAudio.value;
       CFG.clearOld = chkClearOld.value;
 
       app.beginUndoGroup('NS Subtitles — Build Kinetic Subtitles');
@@ -698,11 +811,13 @@
 
         var timeOffset = 0;
         var startDesc = '0.00s';
+
         if (CFG.startMode === 0) {
           timeOffset = comp.time;
           startDesc = 'Playhead: ' + timeOffset.toFixed(2) + 's';
         } else if (CFG.startMode === 1) {
-          var detectedAudio = findAudioLayer(comp, CFG.tag);
+          var refTime = comp.time;
+          var detectedAudio = findAudioLayer(comp, CFG.tag, refTime);
           if (detectedAudio) {
             timeOffset = detectedAudio.inPoint;
             startDesc = 'Audio (' + detectedAudio.name + '): ' + timeOffset.toFixed(2) + 's';
@@ -718,6 +833,21 @@
         var baseY = comp.height * CFG.baseYpct;
         var leading = comp.height * 0.055;
         var leadInSec = CFG.leadInMs / 1000;
+
+        var autoTake = (CFG.takeMode > 0) ? TAKE_LETTERS[CFG.takeMode] : getAutoTakeLetter(comp, CFG.clearOld);
+        var autoTakeColor = TAKE_LABEL_COLORS[autoTake] || 14;
+        var baseTakeIdx = Math.max(0, autoTake.charCodeAt(0) - 65);
+
+        // Auto-Import & Place Audio Layer if toggle is enabled
+        var audioAddedLayer = null;
+        if (CFG.autoAddAudio) {
+          var resolvedAudio = resolveAudioFile(data, jsonPath);
+          if (resolvedAudio) {
+            audioAddedLayer = importAndPlaceAudioLayer(comp, resolvedAudio, timeOffset, autoTake, autoTakeColor);
+          }
+        }
+
+        var createdLayers = [];
         var builtCount = 0;
 
         for (var p = 0; p < data.pages.length; p++) {
@@ -726,22 +856,20 @@
           var lines = page.lines || [];
           var pageStart = (page.start || 0) + timeOffset - leadInSec;
 
-          // Determine take letter
-          var takeLetter = 'A';
-          if (CFG.takeMode > 0) {
-            takeLetter = TAKE_LETTERS[CFG.takeMode];
-          } else if (page.take) {
-            takeLetter = page.take;
-          }
+          // Determine take letter & take color
+          var partOffset = (page.part ? (page.part - 1) : 0);
+          var takeIdx = (CFG.takeMode > 0) ? (CFG.takeMode - 1) : ((baseTakeIdx + partOffset) % 15);
+          var takeLetter = TAKE_LETTERS[takeIdx + 1] || 'A';
+          var takeColor = TAKE_LABEL_COLORS[takeLetter] || 14;
 
-          var nextPageStart = (p + 1 < data.pages.length) ? ((data.pages[p + 1].start || 0) + timeOffset - leadInSec) : null;
+          var nextPageStart = (p + 1 < data.pages.length) ? (((data.pages[p + 1].start || 0)) + timeOffset - leadInSec) : null;
           var pageEnd;
           if (nextPageStart !== null && (nextPageStart - pageStart) < 6.0) {
             pageEnd = nextPageStart;
           } else {
-            pageEnd = Math.max((page.end || (page.start + 1.5)) + timeOffset + 0.8, pageStart + 1.5);
+            pageEnd = (page.end || (page.start + 1.5)) + timeOffset;
           }
-          if (pageEnd - pageStart < 0.5) pageEnd = pageStart + 0.5;
+          if (pageEnd - pageStart < 0.3) pageEnd = pageStart + 0.3;
           if (pageStart < 0) pageStart = 0;
 
           // MODE 1: BROADCAST BLOCK [L]
@@ -756,7 +884,7 @@
               var L = master.duplicate();
               L.enabled = true;
 
-              // Distinct Prefix & Label Color
+              // Distinct Prefix & Per-Take Label Color
               var lineTag = isAcc ? 'ACC' : ('L' + (li + 1));
               var prefix = CFG.usePrefixes ? ('[' + takeLetter + '_' + lineTag + '] ') : '';
               L.name = prefix + 'CAP' + pad(curPageId, 3) + '_' + lineTag;
@@ -764,20 +892,12 @@
               L.inPoint = pageStart;
               L.outPoint = pageEnd;
 
-              // Apply AE Timeline Label Color
-              if (isAcc) {
-                L.label = LABEL_ACC; // 13: Magenta
-              } else if (li === 0) {
-                L.label = LABEL_L1;  // 14: Cyan
-              } else if (li === 1) {
-                L.label = LABEL_L2;  // 11: Orange
-              } else {
-                L.label = LABEL_L3;  // 5: Lavender
-              }
+              // Apply distinct AE Timeline Label Color per Take phase (Accents get Fuchsia 13)
+              L.label = isAcc ? 13 : takeColor;
 
               var st = L.property('Source Text');
               var td = st.value;
-              td.text = line.text;
+              td.text = stripPromptTags(line.text);
               st.setValue(td);
 
               var posX = CFG.centerX ? (comp.width / 2) : L.property('Transform').property('Position').value[0];
@@ -786,6 +906,7 @@
 
               centerAnchorPoint(L, CFG.anchorAlign);
               applyScaleGuard(L, comp.width, CFG.safeMarginPct);
+              createdLayers.push(L);
               builtCount++;
             }
           }
@@ -807,19 +928,11 @@
               LC.name = prefixC + 'CAP' + pad(curPageId, 3) + '_' + lineTag3;
               LC.comment = CFG.tag + ':' + curPageId;
 
-              // Apply AE Timeline Label Color
-              if (isAcc3) {
-                LC.label = LABEL_ACC; // 13: Magenta
-              } else if (li3 === 0) {
-                LC.label = LABEL_L1;  // 14: Cyan
-              } else if (li3 === 1) {
-                LC.label = LABEL_L2;  // 11: Orange
-              } else {
-                LC.label = LABEL_L3;  // 5: Lavender
-              }
+              // Apply distinct AE Timeline Label Color per Take phase
+              LC.label = isAcc3 ? 13 : takeColor;
 
               var lineInTime = pageStart + (li3 * stagger);
-              if (line3.words && line3.words.length > 0 && line3.words[0].s) {
+              if (line3.words && line3.words.length > 0 && line3.words[0].s !== undefined) {
                 lineInTime = line3.words[0].s + timeOffset - leadInSec;
                 if (lineInTime < pageStart) lineInTime = pageStart;
               }
@@ -829,7 +942,7 @@
 
               var stC = LC.property('Source Text');
               var tdC = stC.value;
-              tdC.text = line3.text;
+              tdC.text = stripPromptTags(line3.text);
               stC.setValue(tdC);
 
               var posXC = CFG.centerX ? (comp.width / 2) : LC.property('Transform').property('Position').value[0];
@@ -838,6 +951,7 @@
 
               centerAnchorPoint(LC, CFG.anchorAlign);
               applyScaleGuard(LC, comp.width, CFG.safeMarginPct);
+              createdLayers.push(LC);
               builtCount++;
             }
           }
@@ -847,7 +961,9 @@
             for (var p2 = 0; p2 < data.pages.length; p2++) {
               var pg2 = data.pages[p2];
               var lns2 = pg2.lines || [];
-              var wordTake = pg2.take || takeLetter;
+              var wordPartOffset = (pg2.part ? (pg2.part - 1) : 0);
+              var wordTakeIdx = (CFG.takeMode > 0) ? (CFG.takeMode - 1) : ((baseTakeIdx + wordPartOffset) % 15);
+              var wordTake = TAKE_LETTERS[wordTakeIdx + 1] || 'A';
               for (var l2 = 0; l2 < lns2.length; l2++) {
                 var lineObj = lns2[l2];
                 var wList = lineObj.words || [{ w: lineObj.text, s: pg2.start, e: (pg2.end || pg2.start + 0.5) }];
@@ -866,6 +982,9 @@
 
             for (var fw = 0; fw < flatWords.length; fw++) {
               var item = flatWords[fw];
+              var cleanW = cleanPopWord(item.w);
+              if (!cleanW) continue;
+
               var curPageId2 = item.pageId + pageOffset;
               var wStart = item.s + timeOffset - leadInSec;
               if (wStart < 0) wStart = 0;
@@ -886,17 +1005,18 @@
               var masterW = item.isAccent ? masterAcc : masterBase;
               var LW = masterW.duplicate();
               LW.enabled = true;
-              var itemTake = (CFG.takeMode > 0) ? TAKE_LETTERS[CFG.takeMode] : (item.take || 'A');
+              var itemTake = item.take || autoTake;
+              var itemColor = TAKE_LABEL_COLORS[itemTake] || 14;
               var prefixW = CFG.usePrefixes ? ('[' + itemTake + '_W] ') : '';
               LW.name = prefixW + 'CAP' + pad(curPageId2, 3) + '_W' + pad(fw + 1, 2);
               LW.comment = CFG.tag + ':' + curPageId2;
               LW.inPoint = wStart;
               LW.outPoint = wEnd;
-              LW.label = item.isAccent ? LABEL_ACC : LABEL_WORD;
+              LW.label = item.isAccent ? 13 : itemColor;
 
               var stW = LW.property('Source Text');
               var tdW = stW.value;
-              tdW.text = item.w;
+              tdW.text = cleanW;
               stW.setValue(tdW);
 
               var posWX = CFG.centerX ? (comp.width / 2) : LW.property('Transform').property('Position').value[0];
@@ -904,6 +1024,7 @@
 
               centerAnchorPoint(LW, CFG.anchorAlign);
               applyScaleGuard(LW, comp.width, CFG.safeMarginPct);
+              createdLayers.push(LW);
               builtCount++;
             }
             break;
@@ -914,7 +1035,7 @@
             for (var lt4 = 0; lt4 < lines.length; lt4++) {
               fullText4.push(lines[lt4].text);
             }
-            var combinedText4 = fullText4.join(' ');
+            var combinedText4 = stripPromptTags(fullText4.join(' '));
 
             var LT = masterBase.duplicate();
             LT.enabled = true;
@@ -923,7 +1044,7 @@
             LT.comment = CFG.tag + ':' + curPageId;
             LT.inPoint = pageStart;
             LT.outPoint = pageEnd;
-            LT.label = LABEL_L1;
+            LT.label = takeColor;
 
             var stT = LT.property('Source Text');
             var tdT = stT.value;
@@ -934,6 +1055,7 @@
             LT.property('Transform').property('Position').setValue([posTX, baseY]);
             centerAnchorPoint(LT, CFG.anchorAlign);
             applyScaleGuard(LT, comp.width, CFG.safeMarginPct);
+            createdLayers.push(LT);
             builtCount++;
 
             var allWords4 = [];
@@ -953,6 +1075,9 @@
 
             for (var hi = 0; hi < allWords4.length; hi++) {
               var hw = allWords4[hi];
+              var cleanHW = cleanPopWord(hw.w);
+              if (!cleanHW) continue;
+
               var hiStart = (hw.s || page.start) + timeOffset - leadInSec;
               if (hiStart < pageStart) hiStart = pageStart;
               var hiEnd;
@@ -978,11 +1103,11 @@
               var shapeRect = shapeGroup.property('Contents').addProperty('ADBE Vector Shape - Rect');
               var shapeFill = shapeGroup.property('Contents').addProperty('ADBE Vector Graphic - Fill');
 
-              var wordIdx4 = combinedText4.indexOf(hw.w, charCursor4);
+              var wordIdx4 = combinedText4.indexOf(cleanHW, charCursor4);
               if (wordIdx4 === -1) wordIdx4 = charCursor4;
-              charCursor4 = wordIdx4 + (hw.w || '').length;
+              charCursor4 = wordIdx4 + cleanHW.length;
 
-              var wordChars = (hw.w || '').length;
+              var wordChars = cleanHW.length;
               var estWordW = Math.max(wordChars * charWidth4 * 1.15, 50);
               var estWordH = Math.max(textRect4.height * 1.15, 60);
               shapeRect.property('Size').setValue([estWordW, estWordH]);
@@ -992,12 +1117,157 @@
               shapeHi.property('Transform').property('Position').setValue([wordCenterX, baseY]);
               shapeHi.property('Transform').property('Opacity').setValue(30);
 
+              createdLayers.push(shapeHi);
               builtCount++;
+            }
+          }
+          // MODE 5: SINGLE-LINE STREAM (1-LINE CENTER PUNCH) [S]
+          else if (CFG.layoutMode === 5) {
+            for (var li5 = 0; li5 < lines.length; li5++) {
+              var line5 = lines[li5];
+              var isAcc5 = (line5.style === 'accent');
+              var master5 = isAcc5 ? masterAcc : masterBase;
+
+              var L5 = master5.duplicate();
+              L5.enabled = true;
+
+              var lineTag5 = isAcc5 ? 'ACC' : ('S' + (li5 + 1));
+              var prefix5 = CFG.usePrefixes ? ('[' + takeLetter + '_' + lineTag5 + '] ') : '';
+              L5.name = prefix5 + 'CAP' + pad(curPageId, 3) + '_' + lineTag5;
+              L5.comment = CFG.tag + ':' + curPageId;
+
+              // Calculate start and end time for each individual single-line
+              var lineStart5 = pageStart;
+              if (line5.words && line5.words.length > 0 && line5.words[0].s !== undefined) {
+                lineStart5 = line5.words[0].s + timeOffset - leadInSec;
+                if (lineStart5 < pageStart) lineStart5 = pageStart;
+              }
+
+              var lineEnd5 = pageEnd;
+              if (li5 + 1 < lines.length && lines[li5 + 1].words && lines[li5 + 1].words.length > 0 && lines[li5 + 1].words[0].s !== undefined) {
+                lineEnd5 = lines[li5 + 1].words[0].s + timeOffset - leadInSec;
+              } else if (li5 + 1 < lines.length) {
+                lineEnd5 = pageStart + ((li5 + 1) * ((pageEnd - pageStart) / lines.length));
+              }
+              if (lineEnd5 <= lineStart5) lineEnd5 = lineStart5 + 0.3;
+
+              L5.inPoint = lineStart5;
+              L5.outPoint = lineEnd5;
+              L5.label = isAcc5 ? 13 : takeColor;
+
+              var st5 = L5.property('Source Text');
+              var td5 = st5.value;
+              td5.text = stripPromptTags(line5.text);
+              st5.setValue(td5);
+
+              // Position strictly single-line at baseY
+              var pos5X = CFG.centerX ? (comp.width / 2) : L5.property('Transform').property('Position').value[0];
+              L5.property('Transform').property('Position').setValue([pos5X, baseY]);
+
+              centerAnchorPoint(L5, CFG.anchorAlign);
+              applyScaleGuard(L5, comp.width, CFG.safeMarginPct);
+              createdLayers.push(L5);
+              builtCount++;
+            }
+          }
+          // MODE 6: KARAOKE WORD-FILL (ACTIVE WORD GLOW) [K]
+          else if (CFG.layoutMode === 6) {
+            for (var li6 = 0; li6 < lines.length; li6++) {
+              var line6 = lines[li6];
+              var lineWords6 = line6.words || [];
+              var blockOffset6 = -((lines.length - 1) / 2) * leading;
+              var linePosY6 = baseY + blockOffset6 + li6 * leading;
+              var linePosX6 = CFG.centerX ? (comp.width / 2) : masterBase.property('Transform').property('Position').value[0];
+
+              // 1. BASE DIMMED LINE
+              var LKBase = masterBase.duplicate();
+              LKBase.enabled = true;
+              var prefixKB = CFG.usePrefixes ? ('[' + takeLetter + '_KB] ') : '';
+              LKBase.name = prefixKB + 'CAP' + pad(curPageId, 3) + '_BASE_' + (li6 + 1);
+              LKBase.comment = CFG.tag + ':' + curPageId;
+              LKBase.inPoint = pageStart;
+              LKBase.outPoint = pageEnd;
+              LKBase.label = takeColor; // Distinct Take timeline color
+              LKBase.property('Transform').property('Opacity').setValue(35); // 35% Opacity context
+
+              var cleanLine6 = stripPromptTags(line6.text);
+              var stKB = LKBase.property('Source Text');
+              var tdKB = stKB.value;
+              tdKB.text = cleanLine6;
+              stKB.setValue(tdKB);
+
+              LKBase.property('Transform').property('Position').setValue([linePosX6, linePosY6]);
+              centerAnchorPoint(LKBase, CFG.anchorAlign);
+              applyScaleGuard(LKBase, comp.width, CFG.safeMarginPct);
+              createdLayers.push(LKBase);
+              builtCount++;
+
+              // 2. ACTIVE GLOW WORDS OVER BASE LINE
+              var lineRect6;
+              try { lineRect6 = LKBase.sourceRectAtTime(pageStart + 0.05, false); } catch(e) { lineRect6 = { width: cleanLine6.length * 28, height: 60 }; }
+              var totalChars6 = Math.max(cleanLine6.length, 1);
+              var charWidth6 = lineRect6.width / totalChars6;
+              var lineLeft6 = linePosX6 - (lineRect6.width / 2);
+              var charCursor6 = 0;
+
+              for (var wi6 = 0; wi6 < lineWords6.length; wi6++) {
+                var wObj6 = lineWords6[wi6];
+                var cleanKW = cleanPopWord(wObj6.w);
+                if (!cleanKW) continue;
+
+                var kwStart = (wObj6.s !== undefined ? wObj6.s : page.start) + timeOffset - leadInSec;
+                if (kwStart < pageStart) kwStart = pageStart;
+                var kwEnd;
+                if (wi6 + 1 < lineWords6.length && lineWords6[wi6 + 1].s !== undefined) {
+                  kwEnd = lineWords6[wi6 + 1].s + timeOffset - leadInSec;
+                  if (kwEnd <= kwStart) kwEnd = kwStart + 0.25;
+                } else if (li6 + 1 < lines.length && lines[li6 + 1].words && lines[li6 + 1].words.length > 0 && lines[li6 + 1].words[0].s !== undefined) {
+                  kwEnd = lines[li6 + 1].words[0].s + timeOffset - leadInSec;
+                } else {
+                  kwEnd = pageEnd;
+                }
+                if (kwEnd <= kwStart) kwEnd = kwStart + 0.25;
+
+                var LKWord = masterAcc.duplicate();
+                LKWord.enabled = true;
+                var prefixKW = CFG.usePrefixes ? ('[' + takeLetter + '_KW] ') : '';
+                LKWord.name = prefixKW + 'CAP' + pad(curPageId, 3) + '_KW_' + (li6 + 1) + '_' + (wi6 + 1);
+                LKWord.comment = CFG.tag + ':' + curPageId;
+                LKWord.inPoint = kwStart;
+                LKWord.outPoint = kwEnd;
+                LKWord.label = 13; // Magenta/Accent highlight
+
+                var stKW = LKWord.property('Source Text');
+                var tdKW = stKW.value;
+                tdKW.text = cleanKW;
+                stKW.setValue(tdKW);
+
+                var wordIdx6 = cleanLine6.indexOf(cleanKW, charCursor6);
+                if (wordIdx6 === -1) wordIdx6 = charCursor6;
+                charCursor6 = wordIdx6 + cleanKW.length;
+
+                var wordChars6 = cleanKW.length;
+                var wordCenter6X = lineLeft6 + (wordIdx6 + (wordChars6 / 2)) * charWidth6;
+                LKWord.property('Transform').property('Position').setValue([wordCenter6X, linePosY6]);
+
+                centerAnchorPoint(LKWord, CFG.anchorAlign);
+                applyScaleGuard(LKWord, comp.width, CFG.safeMarginPct);
+                createdLayers.push(LKWord);
+                builtCount++;
+              }
             }
           }
         }
 
-        statusTxt.text = '| Built ' + builtCount + ' subtitle layers (' + startDesc + ')!';
+        // Position audio layer directly below all created subtitle layers
+        if (audioAddedLayer && createdLayers.length > 0) {
+          try {
+            var bottomSubLayer = createdLayers[createdLayers.length - 1];
+            audioAddedLayer.moveAfter(bottomSubLayer);
+          } catch (e) {}
+        }
+
+        statusTxt.text = '| Built ' + builtCount + ' layers (' + startDesc + ')' + (audioAddedLayer ? (' + 🎵 ' + audioAddedLayer.name) : '') + '!';
       } catch (errBuild) {
         alert('Build error: ' + errBuild.toString());
       }
@@ -1071,36 +1341,153 @@
     return updatedCount;
   }
 
-  function findAudioLayer(comp, excludeTag) {
+  function findAudioLayer(comp, excludeTag, targetTime) {
     var AUDIO_EXTS = /\.(mp3|wav|aac|m4a|ogg|flac|aif|aiff|wma)$/i;
+    var t = (targetTime !== undefined) ? targetTime : comp.time;
 
-    for (var i = 1; i <= comp.numLayers; i++) {
-      var L = comp.layer(i);
-      if (excludeTag && L.comment && L.comment.indexOf(excludeTag + ':') === 0) continue;
-      try { if (L.hasAudio) return L; } catch (e) {}
+    // 1. User explicitly selected an audio layer in the AE timeline:
+    for (var s = 1; s <= comp.numLayers; s++) {
+      var Lsel = comp.layer(s);
+      if (Lsel.selected) {
+        if (excludeTag && Lsel.comment && Lsel.comment.indexOf(excludeTag + ':') === 0) continue;
+        if (AUDIO_EXTS.test(Lsel.name)) return Lsel;
+        if (Lsel.source && Lsel.source.file && AUDIO_EXTS.test(Lsel.source.file.name)) return Lsel;
+        if (Lsel.hasAudio && !Lsel.hasVideo) return Lsel;
+      }
     }
 
-    for (var j = 1; j <= comp.numLayers; j++) {
-      var L2 = comp.layer(j);
-      if (excludeTag && L2.comment && L2.comment.indexOf(excludeTag + ':') === 0) continue;
-      try { if (L2.source && L2.source.hasAudio) return L2; } catch (e) {}
-    }
-
+    // 2. Standalone audio file (.mp3, .wav) active at targetTime (e.g. current playhead)
     for (var k = 1; k <= comp.numLayers; k++) {
       var L3 = comp.layer(k);
       if (excludeTag && L3.comment && L3.comment.indexOf(excludeTag + ':') === 0) continue;
-      try {
-        if (L3.source && L3.source.file && AUDIO_EXTS.test(L3.source.file.name)) return L3;
-      } catch (e) {}
+      var isAudio = false;
+      if (L3.source && L3.source.file && AUDIO_EXTS.test(L3.source.file.name)) isAudio = true;
+      else if (AUDIO_EXTS.test(L3.name)) isAudio = true;
+      else if (L3.hasAudio && !L3.hasVideo) isAudio = true;
+
+      if (isAudio) {
+        if (t >= (L3.inPoint - 0.05) && t < L3.outPoint) {
+          return L3;
+        }
+      }
     }
 
+    // 3. Fallback: Any standalone audio file in comp
     for (var m = 1; m <= comp.numLayers; m++) {
       var L4 = comp.layer(m);
       if (excludeTag && L4.comment && L4.comment.indexOf(excludeTag + ':') === 0) continue;
+      if (L4.source && L4.source.file && AUDIO_EXTS.test(L4.source.file.name)) return L4;
       if (AUDIO_EXTS.test(L4.name)) return L4;
+      if (L4.hasAudio && !L4.hasVideo) return L4;
     }
 
     return null;
+  }
+
+  function resolveAudioFile(data, captionsFilePath) {
+    if (!data) return null;
+
+    // 1. Direct path from data.audio in JSON
+    if (data.audio) {
+      var directF = new File(data.audio);
+      if (directF.exists) return directF;
+
+      if (captionsFilePath) {
+        var capDir = (new File(captionsFilePath)).parent.fsName;
+        var relF = new File(capDir + '/' + data.audio);
+        if (relF.exists) return relF;
+      }
+
+      var tempF = new File('C:/Users/root/Desktop/NULLSPREAD/AfterEffects/ae-subs/temp/' + data.audio);
+      if (tempF.exists) return tempF;
+
+      var rootF = new File('C:/Users/root/Desktop/NULLSPREAD/AfterEffects/ae-subs/' + data.audio);
+      if (rootF.exists) return rootF;
+    }
+
+    // 2. Sibling audio file with matching name next to captions JSON
+    if (captionsFilePath) {
+      var mp3Path = captionsFilePath.replace(/\.captions\.json$/i, '.mp3').replace(/\.align\.json$/i, '.mp3');
+      var mp3F = new File(mp3Path);
+      if (mp3F.exists) return mp3F;
+
+      var wavPath = captionsFilePath.replace(/\.captions\.json$/i, '.wav').replace(/\.align\.json$/i, '.wav');
+      var wavF = new File(wavPath);
+      if (wavF.exists) return wavF;
+    }
+
+    return null;
+  }
+
+  function importAndPlaceAudioLayer(comp, audioFile, timeOffset, takeLetter, takeColor) {
+    if (!audioFile || !audioFile.exists) return null;
+
+    // Check if footage already imported into project panel
+    var audioItem = null;
+    for (var i = 1; i <= app.project.numItems; i++) {
+      var itm = app.project.item(i);
+      if (itm instanceof FootageItem && itm.file && itm.file.fsName === audioFile.fsName) {
+        audioItem = itm;
+        break;
+      }
+    }
+
+    // Import if not found
+    if (!audioItem) {
+      try {
+        var io = new ImportOptions(audioFile);
+        audioItem = app.project.importFile(io);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    if (audioItem) {
+      // Check if an audio layer with this source is already placed at this time in comp
+      for (var k = 1; k <= comp.numLayers; k++) {
+        var exL = comp.layer(k);
+        if (exL.source && exL.source === audioItem && Math.abs(exL.inPoint - timeOffset) < 0.08) {
+          return exL;
+        }
+      }
+
+      var audioLayer = comp.layers.add(audioItem);
+      audioLayer.startTime = timeOffset;
+      audioLayer.inPoint = timeOffset;
+      
+      var prefix = CFG.usePrefixes ? ('[' + takeLetter + '_VO] ') : '';
+      audioLayer.name = prefix + audioFile.name;
+      audioLayer.comment = CFG.tag + ':VO:' + takeLetter;
+      audioLayer.label = takeColor;
+
+      return audioLayer;
+    }
+    return null;
+  }
+
+  function stripPromptTags(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/\[\/?[\w\s-]+\]/g, '')
+      .replace(/<\/?[\w\s-]+>/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function cleanPopWord(w) {
+    if (!w) return '';
+    var t = String(w).trim();
+    // 1. Strip any prompt tags
+    t = t.replace(/\[\/?[\w\s-]+\]/g, '').replace(/<\/?[\w\s-]+>/g, '');
+    // 2. Remove leading punctuation (except +, $, €, £, ₽, ₴, #, @, %, - when followed by digit)
+    t = t.replace(/^[^\wа-яёіїєґ'\$€£₽₴%+#\-]+/gi, '');
+    if (t.charAt(0) === '-' && !/^-\d/.test(t)) {
+      t = t.substring(1).trim();
+    }
+    // 3. Remove trailing punctuation EXCEPT '!' and '?' (and '%')
+    t = t.replace(/[,;:\.—–\-"'«»`~…]+$/g, '');
+    t = t.replace(/\.{2,}$/g, '');
+    return t;
   }
 
   function centerAnchorPoint(layer, mode) {
@@ -1184,37 +1571,213 @@
 
     // Built-in presets
     if (presetIdx === 1) {
-      // Luxury Script (Arial Black + Good Vibes Pro)
+      // ✨ Luxury Editorial (White Sans + Champagne Gold Script)
       if (isAccent) {
-        try { td.font = 'GoodVibesPro'; } catch(e) { try { td.font = 'Good Vibes Pro'; } catch(e2) {} }
-        td.fontSize = 78;
-        td.fillColor = [1, 1, 1];
+        try { td.font = 'GoodVibesPro'; } catch(e) { try { td.font = 'Georgia-Italic'; } catch(e2) { try { td.font = 'Arial-ItalicMT'; } catch(e3){} } }
+        td.fontSize = 76;
+        td.fillColor = [0.96, 0.84, 0.58]; // Champagne Gold
         try { td.allCaps = false; } catch(e) {}
+        td.applyStroke = false;
       } else {
-        try { td.font = 'Arial-Black'; } catch(e) { try { td.font = 'Arial Black'; } catch(e2) {} }
+        try { td.font = 'Arial-Black'; } catch(e) { try { td.font = 'Montserrat-Black'; } catch(e2) {} }
         td.fontSize = 54;
         td.fillColor = [1, 1, 1];
         try { td.allCaps = true; } catch(e) {}
+        td.applyStroke = false;
       }
     } else if (presetIdx === 2) {
-      // Nullspread Neon
-      td.fillColor = isAccent ? [0, 1, 0.8] : [1, 1, 1];
+      // ⚡ Tokyo Cyberpunk (Cyan Base + Acid Green Accent)
+      if (isAccent) {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 62;
+        td.fillColor = [0.1, 1.0, 0.2]; // Acid Neon Green
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 5;
+        try { td.allCaps = true; } catch(e) {}
+      } else {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 56;
+        td.fillColor = [0.0, 0.95, 1.0]; // Electric Cyan
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 4;
+        try { td.allCaps = true; } catch(e) {}
+      }
     } else if (presetIdx === 3) {
-      // Hormozi Gold
-      td.font = 'Montserrat-Black';
-      td.fillColor = isAccent ? [1, 0.85, 0] : [1, 1, 1];
-      td.applyStroke = true;
-      td.strokeColor = [0, 0, 0];
-      td.strokeWidth = 4;
+      // 🔥 Hormozi Viral (Gold Yellow + Punch Red Stroke)
+      if (isAccent) {
+        try { td.font = 'Montserrat-Black'; } catch(e) { try { td.font = 'Arial-Black'; } catch(e2) {} }
+        td.fontSize = 64;
+        td.fillColor = [1.0, 0.18, 0.18]; // Punch Red
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 6;
+        try { td.allCaps = true; } catch(e) {}
+      } else {
+        try { td.font = 'Montserrat-Black'; } catch(e) { try { td.font = 'Arial-Black'; } catch(e2) {} }
+        td.fontSize = 58;
+        td.fillColor = [1.0, 0.88, 0.0]; // Pure Yellow
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 5;
+        try { td.allCaps = true; } catch(e) {}
+      }
     } else if (presetIdx === 4) {
-      // Minimalist Clean
-      td.font = 'Helvetica-Bold';
-      td.fillColor = [1, 1, 1];
+      // 💎 Crypto Terminal (Electric Matrix Green + White)
+      if (isAccent) {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 62;
+        td.fillColor = [0.0, 1.0, 0.4]; // Terminal Green
+        td.applyStroke = true;
+        td.strokeColor = [0.05, 0.1, 0.08];
+        td.strokeWidth = 4;
+        try { td.allCaps = true; } catch(e) {}
+      } else {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 54;
+        td.fillColor = [0.94, 0.97, 0.98];
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 3;
+        try { td.allCaps = true; } catch(e) {}
+      }
+    } else if (presetIdx === 5) {
+      // 🌅 Sunset Pop (Vibrant Tangerine + Hot Pink)
+      if (isAccent) {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 62;
+        td.fillColor = [1.0, 0.2, 0.6]; // Hot Pink
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 4;
+        try { td.allCaps = true; } catch(e) {}
+      } else {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 56;
+        td.fillColor = [1.0, 0.48, 0.0]; // Tangerine
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 4;
+        try { td.allCaps = true; } catch(e) {}
+      }
+    } else if (presetIdx === 6) {
+      // 🧊 Minimalist Clean (Ice Blue + Pure White)
+      if (isAccent) {
+        try { td.font = 'Helvetica-Bold'; } catch(e) { try { td.font = 'Arial-BoldMT'; } catch(e2){} }
+        td.fontSize = 58;
+        td.fillColor = [0.6, 0.88, 1.0]; // Soft Ice Blue
+        td.applyStroke = false;
+        try { td.allCaps = false; } catch(e) {}
+      } else {
+        try { td.font = 'Helvetica-Bold'; } catch(e) { try { td.font = 'Arial-BoldMT'; } catch(e2){} }
+        td.fontSize = 52;
+        td.fillColor = [1, 1, 1];
+        td.applyStroke = false;
+        try { td.allCaps = false; } catch(e) {}
+      }
+    } else if (presetIdx === 7) {
+      // 🖤 High-Contrast Viral (Black Stroke + Bright Yellow)
+      if (isAccent) {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 64;
+        td.fillColor = [1.0, 0.92, 0.0]; // Bright Yellow
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 6;
+        try { td.allCaps = true; } catch(e) {}
+      } else {
+        try { td.font = 'Arial-Black'; } catch(e) {}
+        td.fontSize = 56;
+        td.fillColor = [1, 1, 1]; // White
+        td.applyStroke = true;
+        td.strokeColor = [0, 0, 0];
+        td.strokeWidth = 5;
+        try { td.allCaps = true; } catch(e) {}
+      }
     }
 
     st.setValue(td);
     centerAnchorPoint(L, 'center');
     return L;
+  }
+
+  function fitAnimationComposerMarkers(comp, pct, onlySelected) {
+    var inFrac = pct / 100;
+    var count = 0;
+
+    for (var i = 1; i <= comp.numLayers; i++) {
+      var L = comp.layer(i);
+      if (onlySelected && !L.selected) continue;
+      if (!onlySelected && (!L.comment || L.comment.indexOf(CFG.tag + ':') !== 0)) continue;
+
+      var markerProp = L.property('Marker');
+      if (!markerProp || markerProp.numKeys === 0) continue;
+
+      var dur = L.outPoint - L.inPoint;
+      if (dur <= 0.04) continue;
+
+      var targetInTime = L.inPoint + (dur * inFrac);
+
+      var markersToMove = [];
+      for (var k = 1; k <= markerProp.numKeys; k++) {
+        var val = markerProp.keyValue(k);
+        var comm = (val.comment || '').toLowerCase();
+        // Match Animation Composer markers: 'tr in', 'in', or if there's 1 marker on layer
+        var isTrIn = (comm.indexOf('tr in') !== -1 || comm.indexOf('in') !== -1 || markerProp.numKeys === 1);
+        var isTrOut = (comm.indexOf('tr out') !== -1 || comm.indexOf('out') !== -1);
+
+        if (isTrIn && !isTrOut) {
+          markersToMove.push({ oldIndex: k, newTime: targetInTime, val: val });
+        }
+      }
+
+      if (markersToMove.length > 0) {
+        // Remove old keys from highest index to lowest so key indices remain stable
+        for (var m = markersToMove.length - 1; m >= 0; m--) {
+          markerProp.removeKey(markersToMove[m].oldIndex);
+        }
+        // Re-insert at new target time
+        for (var n = 0; n < markersToMove.length; n++) {
+          markerProp.setValueAtTime(markersToMove[n].newTime, markersToMove[n].val);
+        }
+        count++;
+      }
+    }
+    return count;
+  }
+
+  function getAutoTakeLetter(comp, isClearing) {
+    if (isClearing) return 'A';
+    var usedTakes = {};
+    var letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+
+    for (var i = 1; i <= comp.numLayers; i++) {
+      var L = comp.layer(i);
+      if (L.comment && L.comment.indexOf(CFG.tag + ':') === 0) {
+        // 1. Check layer prefix [A_ / [B_
+        var m = L.name.match(/\[([A-Z])_/i);
+        if (m && m[1]) {
+          usedTakes[m[1].toUpperCase()] = true;
+        }
+        // 2. Check comment take tag
+        var mComm = L.comment.match(/:VO:([A-Z])(?::|$)/i);
+        if (mComm && mComm[1]) {
+          usedTakes[mComm[1].toUpperCase()] = true;
+        }
+        // 3. Check layer label color
+        for (var letKey in TAKE_LABEL_COLORS) {
+          if (TAKE_LABEL_COLORS.hasOwnProperty(letKey) && TAKE_LABEL_COLORS[letKey] === L.label) {
+            usedTakes[letKey] = true;
+          }
+        }
+      }
+    }
+
+    for (var k = 0; k < letters.length; k++) {
+      if (!usedTakes[letters[k]]) return letters[k];
+    }
+    return 'A';
   }
 
   function pad(n, len) {

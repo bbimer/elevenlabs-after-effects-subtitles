@@ -60,19 +60,32 @@ function die(msg) { console.error('[vo_generate] ERROR: ' + msg); process.exit(1
 const raw = fs.readFileSync(TEXT_FILE, 'utf8').replace(/\r\n/g, '\n').trim();
 if (!raw) die('Script file is empty.');
 
-// Strip *...* markers, remember emphasized character spans in the PLAIN text.
+// Strip [emphasis]...[/emphasis], [accent]...[/accent], *...* markers, remember emphasized character spans in the PLAIN text.
 let plain = '';
 const emphasisSpans = []; // [startChar, endChar) in plain text
 {
   let i = 0, inEm = false, spanStart = -1;
   while (i < raw.length) {
-    const c = raw[i];
-    if (c === '*') {
+    const remaining = raw.slice(i);
+    const openEmMatch = remaining.match(/^(\[(emphasis|accent)\]|<(emphasis|accent)>|\*)/i);
+    if (openEmMatch) {
       if (!inEm) { inEm = true; spanStart = plain.length; }
-      else { inEm = false; if (plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]); }
-      i++; continue;
+      i += openEmMatch[0].length;
+      continue;
     }
-    plain += c; i++;
+    const closeEmMatch = remaining.match(/^(\[\/(emphasis|accent)\]|<\/(emphasis|accent)>|\*)/i);
+    if (closeEmMatch && inEm) {
+      inEm = false;
+      if (plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]);
+      i += closeEmMatch[0].length;
+      continue;
+    }
+    const otherTagMatch = remaining.match(/^(\[\/?[\w\s-]+\]|<\/?[\w\s-]+>)/);
+    if (otherTagMatch) {
+      i += otherTagMatch[0].length;
+      continue;
+    }
+    plain += raw[i]; i++;
   }
   if (inEm && plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]); // unclosed
 }
