@@ -43,19 +43,32 @@ if (fs.existsSync(TEXT)) {
 
 if (!TEXT) die('Text input is empty.');
 
-// Parse *emphasis* markers from text
+// Parse [emphasis]...[/emphasis], [accent]...[/accent], *emphasis* markers from text
 let plain = '';
 const emphasisSpans = [];
 {
   let i = 0, inEm = false, spanStart = -1;
   while (i < TEXT.length) {
-    const c = TEXT[i];
-    if (c === '*') {
+    const remaining = TEXT.slice(i);
+    const openEmMatch = remaining.match(/^(\[(emphasis|accent)\]|<(emphasis|accent)>|\*)/i);
+    if (openEmMatch) {
       if (!inEm) { inEm = true; spanStart = plain.length; }
-      else { inEm = false; if (plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]); }
-      i++; continue;
+      i += openEmMatch[0].length;
+      continue;
     }
-    plain += c; i++;
+    const closeEmMatch = remaining.match(/^(\[\/(emphasis|accent)\]|<\/(emphasis|accent)>|\*)/i);
+    if (closeEmMatch && inEm) {
+      inEm = false;
+      if (plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]);
+      i += closeEmMatch[0].length;
+      continue;
+    }
+    const otherTagMatch = remaining.match(/^(\[\/?[\w\s-]+\]|<\/?[\w\s-]+>)/);
+    if (otherTagMatch) {
+      i += otherTagMatch[0].length;
+      continue;
+    }
+    plain += TEXT[i]; i++;
   }
   if (inEm && plain.length > spanStart) emphasisSpans.push([spanStart, plain.length]);
 }

@@ -56,9 +56,57 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
   const combinedStartTimes = [];
   const combinedEndTimes = [];
   const combinedParts = [];
+  const combinedEmphasisSpans = [];
   let combinedText = '';
   let timeOffset = 0;
   const audioBuffers = [];
+
+  function parsePromptTags(rawText) {
+    let plain = '';
+    const emphasisSpans = [];
+    let i = 0;
+    let inEmphasis = false;
+    let spanStart = -1;
+
+    while (i < rawText.length) {
+      const remaining = rawText.slice(i);
+      
+      const openEmMatch = remaining.match(/^(\[(emphasis|accent)\]|<(emphasis|accent)>|\*)/i);
+      if (openEmMatch) {
+        if (!inEmphasis) {
+          inEmphasis = true;
+          spanStart = plain.length;
+        }
+        i += openEmMatch[0].length;
+        continue;
+      }
+
+      const closeEmMatch = remaining.match(/^(\[\/(emphasis|accent)\]|<\/(emphasis|accent)>|\*)/i);
+      if (closeEmMatch && inEmphasis) {
+        inEmphasis = false;
+        if (plain.length > spanStart) {
+          emphasisSpans.push([spanStart, plain.length]);
+        }
+        i += closeEmMatch[0].length;
+        continue;
+      }
+
+      const otherTagMatch = remaining.match(/^(\[\/?[\w\s-]+\]|<\/?[\w\s-]+>)/);
+      if (otherTagMatch) {
+        i += otherTagMatch[0].length;
+        continue;
+      }
+
+      plain += rawText[i];
+      i++;
+    }
+
+    if (inEmphasis && plain.length > spanStart) {
+      emphasisSpans.push([spanStart, plain.length]);
+    }
+
+    return { plain, emphasisSpans };
+  }
 
   for (let idx = 0; idx < ids.length; idx++) {
     const id = ids[idx];
@@ -94,7 +142,14 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
     audioBuffers.push(audioBuf);
 
     const alg = item.alignments.alignment;
-    const itemText = item.text || alg.characters.join('');
+    const rawText = item.text || alg.characters.join('');
+    const { plain: cleanItemText, emphasisSpans: itemEmSpans } = parsePromptTags(rawText);
+
+    // Track emphasis spans offset by combinedText length
+    const textStartOffset = combinedText ? combinedText.length + 1 : 0;
+    for (const [s0, s1] of itemEmSpans) {
+      combinedEmphasisSpans.push([s0 + textStartOffset, s1 + textStartOffset]);
+    }
 
     // If not the first audio part, insert space separator into character alignment
     if (idx > 0 && combinedCharacters.length > 0) {
@@ -105,16 +160,25 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
       combinedParts.push(idx);
     }
 
-    // Offset timestamps relative to previous parts
-    for (let c = 0; c < alg.characters.length; c++) {
-      combinedCharacters.push(alg.characters[c]);
-      combinedStartTimes.push(alg.character_start_times_seconds[c] + timeOffset);
-      combinedEndTimes.push(alg.character_end_times_seconds[c] + timeOffset);
+    // Clean prompt tags from character alignment stream
+    let cIdx = 0;
+    while (cIdx < alg.characters.length) {
+      const remainingChars = alg.characters.slice(cIdx).join('');
+      const tagMatch = remainingChars.match(/^(\[\/?[\w\s-]+\]|<\/?[\w\s-]+>|\*)/i);
+      if (tagMatch) {
+        cIdx += tagMatch[0].length;
+        continue;
+      }
+
+      combinedCharacters.push(alg.characters[cIdx]);
+      combinedStartTimes.push(alg.character_start_times_seconds[cIdx] + timeOffset);
+      combinedEndTimes.push(alg.character_end_times_seconds[cIdx] + timeOffset);
       combinedParts.push(idx);
+      cIdx++;
     }
 
     // Add space between text parts
-    combinedText += (combinedText ? ' ' : '') + itemText;
+    combinedText += (combinedText ? ' ' : '') + cleanItemText;
 
     // Update time offset to end of current clip + short pause
     const lastEndTime = alg.character_end_times_seconds[alg.character_end_times_seconds.length - 1] || 0;
@@ -133,7 +197,7 @@ if (!API_KEY) { console.error('ELEVENLABS_API_KEY env var is not set in .env'); 
     ids: ids,
     audio_file: path.basename(mp3File),
     text_plain: combinedText,
-    emphasis_spans: [],
+    emphasis_spans: combinedEmphasisSpans,
     alignment: {
       characters: combinedCharacters,
       character_start_times_seconds: combinedStartTimes,

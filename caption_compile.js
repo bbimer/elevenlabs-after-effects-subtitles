@@ -32,7 +32,7 @@ const DEFAULTS = {
   hardMaxCharsPerLine: 28,
   maxLines: 3,
   targetLines: 2,
-  maxCharsPerPage: 42,      // Optimized for 9:16 Shorts/Reels readability (was 66)
+  maxCharsPerPage: 52,      // Optimized for 2-line semantic thoughts in 9:16 Shorts/Reels (was 42)
   gapThreshold: 0.35,       // Silence >= 350ms forces a page break (was 1.2s)
   minPageDur: 1.0,          // min duration for a page (s)
   maxPageDur: 4.2,          // max duration for a sentence page (s)
@@ -105,14 +105,63 @@ const A = side.alignment;
 if (!A || !A.characters || !A.characters.length) { console.error('No alignment data in ' + alignPath); process.exit(1); }
 
 // ---------- chars -> words ----------
-const chars = A.characters, cs = A.character_start_times_seconds || [], ce = A.character_end_times_seconds || [];
-const cp = A.character_parts || [];
+const rawChars = A.characters, rawCs = A.character_start_times_seconds || [], rawCe = A.character_end_times_seconds || [];
+const rawCp = A.character_parts || [];
+
 let lastValidTime = 0;
-for (let i = 0; i < chars.length; i++) {
-  if (cs[i] !== undefined && !isNaN(cs[i])) lastValidTime = cs[i];
-  else cs[i] = lastValidTime + 0.04;
-  if (ce[i] !== undefined && !isNaN(ce[i])) lastValidTime = ce[i];
-  else ce[i] = cs[i] + 0.04;
+for (let i = 0; i < rawChars.length; i++) {
+  if (rawCs[i] !== undefined && !isNaN(rawCs[i])) lastValidTime = rawCs[i];
+  else rawCs[i] = lastValidTime + 0.04;
+  if (rawCe[i] !== undefined && !isNaN(rawCe[i])) {
+    // If rawCe[i] is character duration (< rawCs[i]), convert to absolute timestamp:
+    if (rawCe[i] < rawCs[i]) rawCe[i] = rawCs[i] + rawCe[i];
+  } else {
+    rawCe[i] = rawCs[i] + 0.05;
+  }
+}
+
+// Clean prompt tags from character stream and extract character-level emphasis
+const chars = [];
+const cs = [];
+const ce = [];
+const cp = [];
+const charEm = [];
+{
+  let i = 0;
+  let inEmphasis = false;
+  while (i < rawChars.length) {
+    const remaining = rawChars.slice(i).join('');
+
+    // Check opening emphasis tag: [emphasis], [accent], <emphasis>, <accent>, *
+    const openEmMatch = remaining.match(/^(\[(emphasis|accent)\]|<(emphasis|accent)>|\*)/i);
+    if (openEmMatch) {
+      inEmphasis = true;
+      i += openEmMatch[0].length;
+      continue;
+    }
+
+    // Check closing emphasis tag: [/emphasis], [/accent], </emphasis>, </accent>, *
+    const closeEmMatch = remaining.match(/^(\[\/(emphasis|accent)\]|<\/(emphasis|accent)>|\*)/i);
+    if (closeEmMatch) {
+      inEmphasis = false;
+      i += closeEmMatch[0].length;
+      continue;
+    }
+
+    // Check other prompt / sound effect tags to strip: [whisper], [/whisper], [pause], etc.
+    const otherTagMatch = remaining.match(/^(\[\/?[\w\s-]+\]|<\/?[\w\s-]+>)/);
+    if (otherTagMatch) {
+      i += otherTagMatch[0].length;
+      continue;
+    }
+
+    chars.push(rawChars[i]);
+    cs.push(rawCs[i]);
+    ce.push(rawCe[i]);
+    if (rawCp && rawCp[i] !== undefined) cp.push(rawCp[i]);
+    charEm.push(inEmphasis);
+    i++;
+  }
 }
 
 const words = [];
@@ -122,8 +171,9 @@ const words = [];
     const c = chars[i];
     if (/\s/.test(c)) {
       if (cur) {
-        if (cur.e <= cur.s) cur.e = cur.s + 0.25;
-        words.push(cur);
+        if (cur.e <= cur.s) cur.e = cur.s + 0.15;
+        cur.w = cur.w.replace(/\[\/?[\w\s-]+\]/g, '').replace(/<\/?[\w\s-]+>/g, '').trim();
+        if (cur.w.length > 0) words.push(cur);
         cur = null;
       }
       continue;
@@ -131,28 +181,31 @@ const words = [];
     if (!cur) {
       const partIdx = (cp && cp[i] !== undefined) ? cp[i] : 0;
       const takeLetter = String.fromCharCode(65 + (partIdx % 26));
-      cur = { w: '', s: cs[i], e: ce[i], i0: i, i1: i, em: false, part: partIdx + 1, take: takeLetter };
+      cur = { w: '', s: cs[i], e: ce[i], i0: i, i1: i, em: !!charEm[i], part: partIdx + 1, take: takeLetter };
     }
     cur.w += c;
-    if (ce[i] >= cs[i]) cur.e = ce[i];
+    if (charEm[i]) cur.em = true;
+    if (ce[i] >= cur.e) cur.e = ce[i];
     cur.i1 = i;
   }
   if (cur) {
-    if (cur.e <= cur.s) cur.e = cur.s + 0.25;
-    words.push(cur);
+    if (cur.e <= cur.s) cur.e = cur.s + 0.15;
+    cur.w = cur.w.replace(/\[\/?[\w\s-]+\]/g, '').replace(/<\/?[\w\s-]+>/g, '').trim();
+    if (cur.w.length > 0) words.push(cur);
   }
 }
 
-// Emphasis mapping
+// Emphasis mapping from sidecar emphasis_spans
 const warningsGlobal = [];
 {
-  const joined = chars.join('');
-  if (side.text_plain && joined !== side.text_plain) {
-    warningsGlobal.push('alignment chars differ from text_plain — emphasis mapping may be off');
-  }
   const spans = side.emphasis_spans || [];
   for (const w of words) {
-    for (const [s0, s1] of spans) { if (w.i0 < s1 && w.i1 >= s0) { w.em = true; break; } }
+    for (const [s0, s1] of spans) {
+      if (w.i0 < s1 && w.i1 >= s0) {
+        w.em = true;
+        break;
+      }
+    }
   }
 }
 
@@ -203,12 +256,19 @@ const rawPages = [];
       shouldFlush = true;
     } else if (gapAfter(i) >= cfg.gapThreshold) {
       if (!isLast && !badBreak(w, nextW)) shouldFlush = true;
-    } else if (isSoft(w) && curLen >= 14) {
-      // Split on comma/colon/dash if clause has enough substance
-      if (!isLast && !badBreak(w, nextW)) shouldFlush = true;
     } else if (curLen >= cfg.maxCharsPerPage || curDur >= cfg.maxPageDur) {
       // Split on page limit at legal boundary
       if (!isLast && !badBreak(w, nextW)) shouldFlush = true;
+    } else if (isSoft(w) && curLen >= 28) {
+      // Split on comma/colon/dash only if clause has substantial weight and next clause has substance
+      let remainingToTerm = 0;
+      for (let k = i + 1; k < words.length; k++) {
+        remainingToTerm += words[k].w.length + 1;
+        if (isTerm(words[k])) break;
+      }
+      if (remainingToTerm >= 14 && !isLast && !badBreak(w, nextW)) {
+        shouldFlush = true;
+      }
     }
 
     if (shouldFlush || isLast) {
@@ -358,6 +418,7 @@ function linesForPage(ws) {
 // ---------- assemble pages ----------
 function displayText(ws, isLastLineOfPage) {
   let t = ws.map(w => w.w).join(' ');
+  t = t.replace(/\[\/?[\w\s-]+\]/g, '').replace(/<\/?[\w\s-]+>/g, '').replace(/\s{2,}/g, ' ').trim();
   if (cfg.stripFinalPeriod && isLastLineOfPage) t = t.replace(/[.,;]$/, '');
   if (cfg.casing === 'upper') t = t.toUpperCase();
   return t;
@@ -400,7 +461,13 @@ for (let i = 0; i < pagesW.length; i++) {
       lines: chunkLines.map((l, li) => ({
         text: displayText(l.ws, li === chunkLines.length - 1),
         style: l.style,
-        words: l.ws.map(w => ({ w: cfg.casing === 'upper' ? w.w.toUpperCase() : w.w, s: round3(w.s), e: round3(w.e) }))
+        words: l.ws.map(w => {
+          let wordTxt = (cfg.casing === 'upper' ? w.w.toUpperCase() : w.w)
+            .replace(/\[\/?[\w\s-]+\]/g, '')
+            .replace(/<\/?[\w\s-]+>/g, '')
+            .trim();
+          return { w: wordTxt, s: round3(w.s), e: round3(w.e) };
+        }).filter(w => w.w.length > 0)
       })),
       warnings: warn,
       locked: false
